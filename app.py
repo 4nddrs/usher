@@ -12,12 +12,14 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "usher-logistics-dev-secret")
 
 # ── Firebase init ─────────────────────────────────────────────────────────────
+
 def _init_firebase():
     if not firebase_admin._apps:
         cred_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
 
         if cred_json:
             cred_dict = json.loads(cred_json)
+            cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
             cred = credentials.Certificate(cred_dict)
         else:
             cred = credentials.Certificate("key.json")
