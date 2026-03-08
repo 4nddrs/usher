@@ -1,0 +1,288 @@
+{% extends "layout.html" %}
+{% block title %}Zonas{% endblock %}
+{% block page_title %}Zonas{% endblock %}
+
+{% block content %}
+<div x-data="zonasPage()">
+
+  <!-- Header row -->
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+    <div class="relative">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none"
+           fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
+      </svg>
+      <input x-model="q" type="search" placeholder="Buscar zona…"
+             class="inp bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2
+                    text-sm text-white placeholder-slate-500 w-52 sm:w-64 transition"/>
+    </div>
+    <button @click="openAdd()"
+            class="btn-primary flex items-center gap-2 text-white font-semibold text-sm rounded-xl px-4 py-2.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Nueva zona
+    </button>
+  </div>
+
+  <!-- Summary chips -->
+  <div class="flex items-center gap-2 mb-4">
+    <span class="chip bg-slate-800 text-slate-400 border border-slate-700">
+      Total <strong class="text-white ml-1">{{ zonas|length }}</strong>
+    </span>
+    <span class="chip bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+      {{ zonas | map(attribute='sub_sectores') | map('length') | sum }} sub-sectores
+    </span>
+  </div>
+
+  <!-- Cards grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for z in zonas %}
+    <div class="bg-slate-800/60 rounded-2xl border border-slate-700/50 card-glow group"
+         data-nombre="{{ z.nombre | lower }}"
+         x-show="!q || $el.dataset.nombre.includes(q.toLowerCase())"
+         x-cloak>
+      <!-- Card header -->
+      <div class="flex items-start justify-between gap-2 p-5 pb-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700
+                      flex items-center justify-center text-sm font-bold text-white shrink-0">
+            {{ z.nombre[:2].upper() }}
+          </div>
+          <div class="min-w-0">
+            <p class="font-bold text-white truncate">{{ z.nombre }}</p>
+            <p class="text-xs text-slate-500">{{ z.sub_sectores | length }} sub-sector{{ 'es' if z.sub_sectores|length != 1 }}</p>
+          </div>
+        </div>
+        <!-- Actions -->
+        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          <button @click='openEdit({{ z | tojson | safe }})'
+                  class="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+          </button>
+          <button @click="openDel('{{ z.id }}')"
+                  class="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7
+                       m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Sub-sectors -->
+      {% if z.sub_sectores %}
+      <div class="px-5 pb-5">
+        <div class="flex flex-wrap gap-1.5">
+          {% for s in z.sub_sectores %}
+          <span class="chip bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{{ s }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <div class="px-5 pb-4">
+        <p class="text-xs text-slate-600 italic">Sin sub-sectores definidos</p>
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="col-span-full bg-slate-800/40 rounded-2xl border border-slate-700/40 p-12 text-center">
+      <p class="text-slate-500">No hay zonas. Agrega la primera.</p>
+    </div>
+    {% endfor %}
+
+    <!-- No results -->
+    <div x-show="noResults()" x-cloak
+         class="col-span-full flex flex-col items-center py-12 gap-2">
+      <p class="text-sm text-slate-500">Sin resultados para "<span class="text-white" x-text="q"></span>"</p>
+      <button @click="q=''" class="text-xs text-cyan-400 hover:text-cyan-300 transition-colors">Limpiar búsqueda</button>
+    </div>
+  </div>
+
+  <!-- ═══ ADD / EDIT MODAL ═══ -->
+  <div x-show="showForm" x-cloak
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center
+              justify-center z-50 p-0 sm:p-4"
+       @click.self="showForm=false">
+    <div class="bg-[#0d1426] rounded-t-3xl sm:rounded-2xl shadow-2xl
+                border border-slate-700 w-full sm:max-w-md overflow-hidden" @click.stop>
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-700/60">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600
+                      flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-white" x-text="editing ? 'Editar Zona' : 'Nueva Zona'"></h3>
+        </div>
+        <button @click="showForm=false"
+                class="text-slate-500 hover:text-white hover:bg-slate-700 w-8 h-8 rounded-lg
+                       flex items-center justify-center transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+        <!-- Nombre -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+            Nombre de la zona <span class="text-red-400">*</span>
+          </label>
+          <input x-model="f.nombre" id="zn_nombre" type="text" placeholder="Ej: Zona Norte"
+                 class="inp w-full bg-slate-800 border border-slate-700 rounded-xl
+                        px-4 py-2.5 text-sm text-white placeholder-slate-500 transition"/>
+        </div>
+
+        <!-- Sub-sectores -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+            Sub-sectores
+          </label>
+          <p class="text-xs text-slate-500 mb-3">Agrega cada sub-sector por separado</p>
+          <!-- Existing chips -->
+          <div class="flex flex-wrap gap-1.5 mb-3" x-show="f.sub_sectores.length">
+            <template x-for="(s,i) in f.sub_sectores" :key="i">
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg
+                           bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs">
+                <span x-text="s"></span>
+                <button @click="f.sub_sectores.splice(i,1)"
+                        class="hover:text-red-400 font-bold ml-0.5">&times;</button>
+              </span>
+            </template>
+          </div>
+          <!-- New sub-sector input -->
+          <div class="flex gap-2">
+            <input x-model="newSub" @keydown.enter.prevent="addSub()" type="text"
+                   placeholder="Ej: Sector A"
+                   class="inp flex-1 bg-slate-800 border border-slate-700 rounded-xl
+                          px-3 py-2 text-sm text-white placeholder-slate-500 transition"/>
+            <button @click="addSub()"
+                    class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm transition-colors">
+              Agregar
+            </button>
+          </div>
+        </div>
+
+        <p x-show="err" x-text="err" x-cloak
+           class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2"></p>
+      </div>
+
+      <div class="flex gap-3 px-5 pb-5">
+        <button @click="showForm=false"
+                class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-semibold transition-colors">
+          Cancelar
+        </button>
+        <button @click="save()" :disabled="loading"
+                class="flex-1 py-2.5 btn-primary text-white rounded-xl text-sm font-semibold disabled:opacity-50">
+          <span x-text="loading ? 'Guardando…' : 'Guardar'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DELETE MODAL ═══ -->
+  <div x-show="showDel" x-cloak
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+       @click.self="showDel=false">
+    <div class="bg-[#0d1426] rounded-2xl shadow-2xl border border-slate-700 w-full max-w-sm p-6" @click.stop>
+      <div class="flex items-center gap-4 mb-5">
+        <div class="w-12 h-12 rounded-2xl bg-red-500/15 border border-red-500/20 flex items-center justify-center shrink-0">
+          <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3
+                     L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="font-bold text-white">¿Eliminar zona?</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Esta acción es permanente e irreversible.</p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button @click="showDel=false"
+                class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-semibold transition-colors">Cancelar</button>
+        <button @click="doDelete()"
+                class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-semibold transition-colors">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function zonasPage() {
+  return {
+    q: '', showForm: false, showDel: false,
+    editing: false, loading: false,
+    f: { id:'', nombre:'', sub_sectores: [] },
+    newSub: '', delId:'', err:'',
+
+    noResults() {
+      if (!this.q) return false;
+      const cards = document.querySelectorAll('[data-nombre]');
+      return [...cards].every(c => !c.dataset.nombre.includes(this.q.toLowerCase()));
+    },
+
+    addSub() {
+      const s = this.newSub.trim();
+      if (s && !this.f.sub_sectores.includes(s)) { this.f.sub_sectores.push(s); }
+      this.newSub = '';
+    },
+
+    openAdd() {
+      this.editing = false;
+      this.f = { id:'', nombre:'', sub_sectores: [] };
+      this.newSub = ''; this.err = '';
+      this.showForm = true;
+      this.$nextTick(() => document.getElementById('zn_nombre')?.focus());
+    },
+
+    openEdit(z) {
+      this.editing = true;
+      this.f = {
+        id:           String(z.id || ''),
+        nombre:       String(z.nombre || ''),
+        sub_sectores: Array.isArray(z.sub_sectores) ? [...z.sub_sectores] : [],
+      };
+      this.newSub = ''; this.err = '';
+      this.showForm = true;
+    },
+
+    openDel(id) { this.delId = id; this.showDel = true; },
+
+    async save() {
+      this.err = '';
+      const nombre = this.f.nombre.trim();
+      if (!nombre) { this.err = 'El nombre es obligatorio.'; return; }
+      if (this.newSub.trim()) { this.addSub(); }
+      this.loading = true;
+      const url    = this.editing ? `/api/zonas/${this.f.id}` : '/api/zonas';
+      const method = this.editing ? 'PUT' : 'POST';
+      try {
+        const res = await fetch(url, {
+          method, headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, sub_sectores: this.f.sub_sectores }),
+        });
+        if (res.ok) { location.reload(); return; }
+        const d = await res.json().catch(() => ({}));
+        this.err = d.error || `Error ${res.status}`;
+      } catch(e) { this.err = 'Error de conexión.'; }
+      this.loading = false;
+    },
+
+    async doDelete() {
+      await fetch(`/api/zonas/${this.delId}`, { method: 'DELETE' });
+      location.reload();
+    },
+  };
+}
+</script>
+{% endblock %}

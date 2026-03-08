@@ -1,0 +1,224 @@
+{% extends "layout.html" %}
+{% block title %}Congregaciones{% endblock %}
+{% block page_title %}Congregaciones{% endblock %}
+
+{% block content %}
+<div x-data="congsPage()">
+
+  <!-- Header row -->
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+    <div class="relative">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none"
+           fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
+      </svg>
+      <input x-model="q" type="search" placeholder="Buscar congregación…"
+             class="inp bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2
+                    text-sm text-white placeholder-slate-500 w-52 sm:w-64 transition"/>
+    </div>
+    <button @click="openAdd()"
+            class="btn-primary flex items-center gap-2 text-white font-semibold text-sm rounded-xl px-4 py-2.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Nueva congregación
+    </button>
+  </div>
+
+  <!-- Summary chips -->
+  <div class="flex items-center gap-2 mb-4">
+    <span class="chip bg-slate-800 text-slate-400 border border-slate-700">
+      Total <strong class="text-white ml-1">{{ congregaciones|length }}</strong>
+    </span>
+  </div>
+
+  <!-- Cards grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    {% for c in congregaciones %}
+    <div class="bg-slate-800/60 rounded-2xl border border-slate-700/50 card-glow p-5 group"
+         data-nombre="{{ c.nombre | lower }}"
+         x-show="!q || $el.dataset.nombre.includes(q.toLowerCase())"
+         x-cloak>
+      <div class="flex items-start justify-between gap-2">
+        <!-- Icon + name -->
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700
+                      flex items-center justify-center text-sm font-bold text-white shrink-0">
+            {{ c.nombre[:2].upper() }}
+          </div>
+          <div class="min-w-0">
+            <p class="font-semibold text-white truncate">{{ c.nombre }}</p>
+            <p class="text-[11px] text-slate-500 font-mono truncate">{{ c.id }}</p>
+          </div>
+        </div>
+        <!-- Actions -->
+        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          <button @click='openEdit({{ c | tojson | safe }})'
+                  class="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+          </button>
+          <button @click="openDel('{{ c.id }}')"
+                  class="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7
+                       m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="col-span-full bg-slate-800/40 rounded-2xl border border-slate-700/40 p-12 text-center">
+      <p class="text-slate-500">No hay congregaciones. Agrega la primera.</p>
+    </div>
+    {% endfor %}
+
+    <!-- No results -->
+    <div x-show="noResults()" x-cloak
+         class="col-span-full flex flex-col items-center py-12 gap-2">
+      <p class="text-sm text-slate-500">Sin resultados para "<span class="text-white" x-text="q"></span>"</p>
+      <button @click="q=''" class="text-xs text-cyan-400 hover:text-cyan-300 transition-colors">Limpiar búsqueda</button>
+    </div>
+  </div>
+
+  <!-- ═══ ADD / EDIT MODAL ═══ -->
+  <div x-show="showForm" x-cloak
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center
+              justify-center z-50 p-0 sm:p-4"
+       @click.self="showForm=false">
+    <div class="bg-[#0d1426] rounded-t-3xl sm:rounded-2xl shadow-2xl
+                border border-slate-700 w-full sm:max-w-sm overflow-hidden" @click.stop>
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-700/60">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600
+                      flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-white" x-text="editing ? 'Editar Congregación' : 'Nueva Congregación'"></h3>
+        </div>
+        <button @click="showForm=false"
+                class="text-slate-500 hover:text-white hover:bg-slate-700 w-8 h-8 rounded-lg
+                       flex items-center justify-center transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+            Nombre <span class="text-red-400">*</span>
+          </label>
+          <input x-model="f.nombre" id="cn_nombre" type="text" placeholder="Ej: Congregación Norte"
+                 class="inp w-full bg-slate-800 border border-slate-700 rounded-xl
+                        px-4 py-2.5 text-sm text-white placeholder-slate-500 transition"/>
+        </div>
+        <p x-show="err" x-text="err" x-cloak
+           class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2"></p>
+      </div>
+      <div class="flex gap-3 px-5 pb-5">
+        <button @click="showForm=false"
+                class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-semibold transition-colors">
+          Cancelar
+        </button>
+        <button @click="save()" :disabled="loading"
+                class="flex-1 py-2.5 btn-primary text-white rounded-xl text-sm font-semibold disabled:opacity-50">
+          <span x-text="loading ? 'Guardando…' : 'Guardar'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DELETE MODAL ═══ -->
+  <div x-show="showDel" x-cloak
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+       @click.self="showDel=false">
+    <div class="bg-[#0d1426] rounded-2xl shadow-2xl border border-slate-700 w-full max-w-sm p-6" @click.stop>
+      <div class="flex items-center gap-4 mb-5">
+        <div class="w-12 h-12 rounded-2xl bg-red-500/15 border border-red-500/20 flex items-center justify-center shrink-0">
+          <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3
+                     L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="font-bold text-white">¿Eliminar congregación?</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Esta acción es permanente e irreversible.</p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button @click="showDel=false"
+                class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-semibold transition-colors">
+          Cancelar
+        </button>
+        <button @click="doDelete()"
+                class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-semibold transition-colors">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function congsPage() {
+  return {
+    q: '', showForm: false, showDel: false,
+    editing: false, loading: false,
+    f: { id:'', nombre:'' }, delId:'', err:'',
+
+    noResults() {
+      if (!this.q) return false;
+      const cards = document.querySelectorAll('[data-nombre]');
+      return [...cards].every(c => !c.dataset.nombre.includes(this.q.toLowerCase()));
+    },
+
+    openAdd() {
+      this.editing = false; this.f = { id:'', nombre:'' }; this.err = '';
+      this.showForm = true;
+      this.$nextTick(() => document.getElementById('cn_nombre')?.focus());
+    },
+
+    openEdit(c) {
+      this.editing = true; this.f = { id: String(c.id||''), nombre: String(c.nombre||'') };
+      this.err = ''; this.showForm = true;
+    },
+
+    openDel(id) { this.delId = id; this.showDel = true; },
+
+    async save() {
+      this.err = '';
+      const nombre = this.f.nombre.trim();
+      if (!nombre) { this.err = 'El nombre es obligatorio.'; return; }
+      this.loading = true;
+      const url    = this.editing ? `/api/congregaciones/${this.f.id}` : '/api/congregaciones';
+      const method = this.editing ? 'PUT' : 'POST';
+      try {
+        const res = await fetch(url, {
+          method, headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre }),
+        });
+        if (res.ok) { location.reload(); return; }
+        const d = await res.json().catch(() => ({}));
+        this.err = d.error || `Error ${res.status}`;
+      } catch(e) { this.err = 'Error de conexión.'; }
+      this.loading = false;
+    },
+
+    async doDelete() {
+      await fetch(`/api/congregaciones/${this.delId}`, { method: 'DELETE' });
+      location.reload();
+    },
+  };
+}
+</script>
+{% endblock %}

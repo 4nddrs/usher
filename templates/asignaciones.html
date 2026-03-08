@@ -1,0 +1,676 @@
+{% extends "layout.html" %}
+{% block title %}Asignaciones{% endblock %}
+{% block page_title %}Asignaciones{% endblock %}
+
+{% block content %}
+<script>
+const _VOLS  = {{ voluntarios  | tojson }};
+const _ZONAS = {{ zonas        | tojson }};
+const _CAPS  = {{ capitanes    | tojson }};
+</script>
+
+<div x-data="asigPage()">
+
+  <!-- Header row -->
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Search -->
+      <div class="relative">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
+        </svg>
+        <input x-model="q" type="search" placeholder="Buscar…"
+               class="inp bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2
+                      text-sm text-white placeholder-slate-500 w-44 sm:w-52 transition"/>
+      </div>
+      <!-- Date filter -->
+      <input x-model="fDate" type="date"
+             class="inp bg-slate-800 border border-slate-700 rounded-xl px-3 py-2
+                    text-sm text-white transition [color-scheme:dark]"/>
+      <!-- Clear -->
+      <button x-show="q||fDate" @click="q='';fDate=''" x-cloak
+              class="text-xs text-slate-400 hover:text-white transition-colors px-2">Limpiar</button>
+    </div>
+    <button @click="openAdd()"
+            class="btn-primary flex items-center gap-2 text-white font-semibold text-sm rounded-xl px-4 py-2.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Nueva asignación
+    </button>
+  </div>
+
+  <!-- Summary chips -->
+  <div class="flex flex-wrap items-center gap-2 mb-4">
+    <span class="chip bg-slate-800 text-slate-400 border border-slate-700">
+      Total <strong class="text-white ml-1">{{ asignaciones|length }}</strong>
+    </span>
+  </div>
+
+  <!-- Table card -->
+  <div class="bg-slate-800/60 rounded-2xl border border-slate-700/50 overflow-hidden card-glow">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm min-w-[700px]">
+        <thead>
+          <tr class="bg-slate-800/80 border-b border-slate-700/60">
+            <th class="text-left px-4 py-3 text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Fecha & Bloque</th>
+            <th class="text-left px-4 py-3 text-[11px] text-slate-500 font-semibold uppercase tracking-wider hidden sm:table-cell">Voluntario</th>
+            <th class="text-left px-4 py-3 text-[11px] text-slate-500 font-semibold uppercase tracking-wider hidden md:table-cell">Capitán</th>
+            <th class="text-left px-4 py-3 text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Zona / Sector</th>
+            <th class="px-4 py-3 text-[11px] text-slate-500 font-semibold uppercase tracking-wider text-right">Acc.</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-700/30">
+          {% for a in asignaciones %}
+          <tr class="hover:bg-slate-700/30 transition-colors group"
+              data-text="{{ (a.voluntario_nombre ~ ' ' ~ a.zona_nombre ~ ' ' ~ a.sub_sector ~ ' ' ~ a.fecha ~ ' ' ~ (a.bloque_maestro or '')) | lower }}"
+              data-fecha="{{ a.fecha }}"
+              x-show="rowVisible($el)"
+              x-cloak>
+            <td class="px-4 py-3">
+              <p class="font-semibold text-white text-xs">{{ a.fecha }}</p>
+              <p class="text-[11px] text-slate-500 mt-0.5 font-mono">{{ a.bloque_maestro or a.bloque_horario or '—' }}</p>
+            </td>
+            <td class="px-4 py-3 hidden sm:table-cell">
+              <span class="font-medium text-slate-300">{{ a.voluntario_nombre }}</span>
+            </td>
+            <td class="px-4 py-3 hidden md:table-cell">
+              <span class="chip bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                {{ a.capitan_nombre }}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <p class="text-slate-300 font-medium">{{ a.zona_nombre }}</p>
+              {% if a.sub_sector %}
+              <p class="text-[11px] text-slate-500">{{ a.sub_sector }}</p>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-right">
+              <div class="inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button @click='printCarta({{ a | tojson | safe }})'
+                        title="Descargar PDF"
+                        class="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M9 13h6m-3-3v6"/>
+                  </svg>
+                </button>
+                <button @click='openMsg({{ a | tojson | safe }})'
+                        title="Generar carta WhatsApp"
+                        class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                  </svg>
+                </button>
+                <button @click='openEdit({{ a | tojson | safe }})'
+                        class="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                </button>
+                <button @click="openDel('{{ a.id }}')"
+                        class="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7
+                             m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="px-4 py-16 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-slate-700/50 flex items-center justify-center">
+                  <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                </div>
+                <p class="text-slate-500 text-sm">No hay asignaciones. Crea la primera.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div x-show="noResults()" x-cloak
+         class="flex flex-col items-center py-12 gap-2 border-t border-slate-700/30">
+      <p class="text-sm text-slate-500">Sin resultados para el filtro actual</p>
+      <button @click="q='';fDate=''" class="text-xs text-cyan-400 hover:text-cyan-300 transition-colors">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <!-- ═══ ADD / EDIT MODAL ═══ -->
+  <div x-show="showForm" x-cloak
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center
+              justify-center z-50 p-0 sm:p-4"
+       @click.self="showForm=false">
+    <div class="bg-[#0d1426] rounded-t-3xl sm:rounded-2xl shadow-2xl
+                border border-slate-700 w-full sm:max-w-lg overflow-hidden" @click.stop>
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-700/60">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600
+                      flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-white" x-text="editing ? 'Editar Asignación' : 'Nueva Asignación'"></h3>
+        </div>
+        <button @click="showForm=false"
+                class="text-slate-500 hover:text-white hover:bg-slate-700 w-8 h-8 rounded-lg
+                       flex items-center justify-center transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+
+        <!-- Row 1: Fecha + Capitán -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+              Fecha <span class="text-red-400">*</span>
+            </label>
+            <input x-model="f.fecha" type="date"
+                   class="inp w-full bg-slate-800 border border-slate-700 rounded-xl
+                          px-3 py-2.5 text-sm text-white transition [color-scheme:dark]"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+              Capitán <span class="text-red-400">*</span>
+            </label>
+            <select x-model="f.capitan_id"
+                    class="inp w-full bg-slate-800 border border-slate-700 rounded-xl
+                           px-3 py-2.5 text-sm text-white transition appearance-none cursor-pointer">
+              <option value="">Seleccionar…</option>
+              <template x-for="c in caps" :key="c.id">
+                <option :value="c.id" x-text="c.nombre"
+                        :selected="f.capitan_id === c.id"></option>
+              </template>
+            </select>
+          </div>
+        </div>
+
+        <!-- Row 2: Voluntario + Bloque horario -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+              Voluntario <span class="text-red-400">*</span>
+            </label>
+            <select x-model="f.voluntario_id"
+                    class="inp w-full bg-slate-800 border border-slate-700 rounded-xl
+                           px-3 py-2.5 text-sm text-white transition appearance-none cursor-pointer">
+              <option value="">Seleccionar…</option>
+              <template x-for="v in vols" :key="v.id">
+                <option :value="v.id" x-text="v.nombre"
+                        :selected="f.voluntario_id === v.id"></option>
+              </template>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+              Bloque horario <span class="text-red-400">*</span>
+            </label>
+            <select x-model="f.bloque_maestro" @change="selectBloque(f.bloque_maestro)"
+                    class="inp w-full bg-slate-800 border border-slate-700 rounded-xl
+                           px-3 py-2.5 text-sm text-white transition appearance-none cursor-pointer">
+              <option value="">Seleccionar…</option>
+              <template x-for="b in bloques" :key="b.label">
+                <option :value="b.label" x-text="b.label" :selected="f.bloque_maestro === b.label"></option>
+              </template>
+            </select>
+            <!-- Horario preview -->
+            <p x-show="f.horario_inicio" x-cloak
+               class="mt-1.5 text-[11px] text-cyan-400 font-mono">
+              <span x-text="'⏱ ' + f.horario_inicio + ' – ' + f.horario_fin"></span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Row 3: Zona + Sub-sector -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+              Zona <span class="text-red-400">*</span>
+            </label>
+            <select x-model="f.zona_id" @change="f.sub_sector=''"
+                    class="inp w-full bg-slate-800 border border-slate-700 rounded-xl
+                           px-3 py-2.5 text-sm text-white transition appearance-none cursor-pointer">
+              <option value="">Seleccionar…</option>
+              <template x-for="z in zonas" :key="z.id">
+                <option :value="z.id" x-text="z.nombre"
+                        :selected="f.zona_id === z.id"></option>
+              </template>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+              Sub-sector
+            </label>
+            <select x-model="f.sub_sector"
+                    class="inp w-full bg-slate-800 border border-slate-700 rounded-xl
+                           px-3 py-2.5 text-sm text-white transition appearance-none cursor-pointer"
+                    :disabled="!selectedZona()">
+              <option value="">—</option>
+              <template x-for="s in (selectedZona()?.sub_sectores || [])" :key="s">
+                <option :value="s" x-text="s" :selected="f.sub_sector === s"></option>
+              </template>
+            </select>
+          </div>
+        </div>
+
+        <!-- Notas -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Notas</label>
+          <textarea x-model="f.notas" rows="2" placeholder="Observaciones opcionales…"
+                    class="inp w-full bg-slate-800 border border-slate-700 rounded-xl
+                           px-3 py-2.5 text-sm text-white placeholder-slate-500 resize-none transition"></textarea>
+        </div>
+
+        <p x-show="err" x-text="err" x-cloak
+           class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2"></p>
+      </div>
+
+      <div class="flex gap-3 px-5 pb-5">
+        <button @click="showForm=false"
+                class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-semibold transition-colors">
+          Cancelar
+        </button>
+        <button @click="save()" :disabled="loading"
+                class="flex-1 py-2.5 btn-primary text-white rounded-xl text-sm font-semibold disabled:opacity-50">
+          <span x-text="loading ? 'Guardando…' : 'Guardar'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DELETE MODAL ═══ -->
+  <div x-show="showDel" x-cloak
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+       @click.self="showDel=false">
+    <div class="bg-[#0d1426] rounded-2xl shadow-2xl border border-slate-700 w-full max-w-sm p-6" @click.stop>
+      <div class="flex items-center gap-4 mb-5">
+        <div class="w-12 h-12 rounded-2xl bg-red-500/15 border border-red-500/20 flex items-center justify-center shrink-0">
+          <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3
+                     L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="font-bold text-white">¿Eliminar asignación?</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Esta acción es permanente e irreversible.</p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button @click="showDel=false"
+                class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-semibold transition-colors">Cancelar</button>
+        <button @click="doDelete()"
+                class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-semibold transition-colors">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- \u2550\u2550\u2550 MESSAGE MODAL \u2550\u2550\u2550 -->
+  <div x-show="showMsg" x-cloak
+       class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center
+              justify-center z-50 p-0 sm:p-4"
+       @click.self="showMsg=false">
+    <div class="bg-[#0d1426] rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-700
+                w-full sm:max-w-2xl overflow-hidden max-h-[90vh] flex flex-col" @click.stop>
+
+      <!-- Modal header -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-700/60 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600
+                      flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-sm">Carta de Asignaci&#xF3;n</h3>
+            <p class="text-[11px] text-slate-500">Formato WhatsApp &mdash; copia y pega directamente</p>
+          </div>
+        </div>
+        <button @click="showMsg=false"
+                class="text-slate-500 hover:text-white hover:bg-slate-700 w-8 h-8 rounded-lg
+                       flex items-center justify-center transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Textarea body -->
+      <div class="flex-1 overflow-y-auto p-5">
+        <textarea id="msg_ta" :value="msgText" readonly rows="20"
+                  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3
+                         text-xs text-slate-300 font-mono leading-relaxed resize-none
+                         focus:outline-none focus:border-slate-600 cursor-text"
+                  @click="$el.select()"></textarea>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex gap-3 px-5 pb-5 shrink-0">
+        <button @click="showMsg=false"
+                class="py-2.5 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-semibold transition-colors">
+          Cerrar
+        </button>
+        <button @click="copyMsg()"
+                class="py-2.5 px-4 rounded-xl text-sm font-semibold transition-all"
+                :class="msgCopied ? 'bg-emerald-600 text-white' : 'bg-slate-700 hover:bg-slate-600 text-white'">
+          <span x-text="msgCopied ? '\u2713 Copiado' : '\uD83D\uDCCB Copiar'"></span>
+        </button>
+        <a :href="waUrl()" target="_blank" rel="noopener noreferrer"
+           @click="showMsg=false"
+           class="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold text-center transition-all
+                  flex items-center justify-center gap-2"
+           :class="msgPhone ? 'bg-[#25d366] hover:bg-[#20bc5a] text-white cursor-pointer' : 'bg-slate-700/50 text-slate-500 cursor-not-allowed pointer-events-none'">
+          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          <span x-text="msgPhone ? 'Enviar por WhatsApp' : 'Sin n\u00famero'"></span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function asigPage() {
+  return {
+    q: '', fDate: '', showForm: false, showDel: false, showMsg: false,
+    editing: false, loading: false, err:'', delId:'', msgText: '', msgCopied: false, msgPhone: '',
+    f: { id:'', fecha:'', voluntario_id:'', capitan_id:'', zona_id:'', sub_sector:'', bloque_maestro:'', horario_inicio:'', horario_fin:'', notas:'' },
+    vols:   _VOLS,
+    zonas:  _ZONAS,
+    caps:   _CAPS,
+    bloques: [
+      { label: '7:30 – 12:30',  inicio: '07:30', fin: '12:30' },
+      { label: '12:30 – 17:00', inicio: '12:30', fin: '17:00' },
+      { label: '7:30 – 10:00',  inicio: '07:30', fin: '10:00' },
+      { label: '10:00 – 12:30', inicio: '10:00', fin: '12:30' },
+      { label: '12:30 – 15:00', inicio: '12:30', fin: '15:00' },
+      { label: '15:00 – 17:00', inicio: '15:00', fin: '17:00' },
+    ],
+
+    selectedZona() { return this.zonas.find(z => z.id === this.f.zona_id); },
+
+    rowVisible(el) {
+      const text  = (el.dataset.text  || '').toLowerCase();
+      const fecha = (el.dataset.fecha || '');
+      const qOk   = !this.q     || text.includes(this.q.toLowerCase());
+      const dOk   = !this.fDate || fecha === this.fDate;
+      return qOk && dOk;
+    },
+
+    noResults() {
+      if (!this.q && !this.fDate) return false;
+      const rows = document.querySelectorAll('tbody tr[data-text]');
+      return [...rows].every(r => !this.rowVisible(r));
+    },
+
+    selectBloque(label) {
+      const b = this.bloques.find(b => b.label === label);
+      if (b) { this.f.horario_inicio = b.inicio; this.f.horario_fin = b.fin; }
+    },
+
+    openAdd() {
+      this.editing = false;
+      const today = new Date().toISOString().slice(0,10);
+      this.f = { id:'', fecha: today, voluntario_id:'', capitan_id:'', zona_id:'', sub_sector:'', bloque_maestro:'', horario_inicio:'', horario_fin:'', notas:'' };
+      this.err = ''; this.showForm = true;
+    },
+
+    openEdit(a) {
+      this.editing = true;
+      const h = (typeof a.horario === 'object' && a.horario) ? a.horario : {};
+      this.f = {
+        id:             String(a.id || ''),
+        fecha:          String(a.fecha || ''),
+        voluntario_id:  String(a.voluntario_id || ''),
+        capitan_id:     String(a.capitan_id || ''),
+        zona_id:        String(a.zona_id || ''),
+        sub_sector:     String(a.sub_sector || ''),
+        bloque_maestro: String(a.bloque_maestro || a.bloque_horario || ''),
+        horario_inicio: String(h.inicio || ''),
+        horario_fin:    String(h.fin    || ''),
+        notas:          String(a.notas || ''),
+      };
+      this.err = ''; this.showForm = true;
+    },
+
+    openDel(id) { this.delId = id; this.showDel = true; },
+
+    fechaLarga(iso) {
+      if (!iso) return iso;
+      const [y, m, d] = iso.split('-').map(Number);
+      const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      return `${d} de ${meses[m-1]} de ${y}`;
+    },
+
+    turnoFromBloque(label) {
+      const map = {
+        '7:30 \u2013 12:30': '1er', '12:30 \u2013 17:00': '2do',
+        '7:30 \u2013 10:00': '1er', '10:00 \u2013 12:30': '2do',
+        '12:30 \u2013 15:00': '3er', '15:00 \u2013 17:00': '4to',
+      };
+      return map[label] || '1er';
+    },
+
+    openMsg(a) {
+      const nombre   = a.voluntario_nombre || '\u2014';
+      const cong     = a.congregacion_nombre || '\u2014';
+      const zonaId   = a.zona_id_zona || a.zona_id || '\u2014';
+      const sub      = a.sub_sector || '\u2014';
+      const zonaDesc = a.zona_nombre_descriptivo || a.zona_nombre || '\u2014';
+      const bloque   = a.bloque_maestro || a.bloque_horario || '\u2014';
+      const turno    = this.turnoFromBloque(bloque);
+      const fecha    = this.fechaLarga(a.fecha);
+
+      // Resolve celular from _VOLS
+      const vol = this.vols.find(v => v.id === a.voluntario_id);
+      const rawPhone = (vol && vol.celular) ? String(vol.celular) : '';
+      // Normalize to international (Venezuela: 0XXX -> 58XXX)
+      const digits = rawPhone.replace(/\D/g, '');
+      const intlPhone = digits.startsWith('0') ? '58' + digits.slice(1) : digits;
+      this.msgPhone = intlPhone;
+      this.msgText =
+`*Asamblea de Circuito*
+*"TIENEN QUE ADORARLO CON ESPIRITU Y CON VERDAD"*
+
+_${fecha}_
+
+*Departamento de Acomodadores*
+
+Estimado Hermano: *${nombre}*
+
+*Congr.:* _${cong}_
+
+*Presente:*
+
+A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregaci\u00f3n, le invitamos a servir en este departamento en la Asamblea de Circuito a realizarse en fecha *${fecha}*, en vista de que se espera una notable asistencia, rogamos su colaboraci\u00f3n al respecto.
+
+Para poder brindar una recepci\u00f3n de calidad a nuestros hermanos e invitados, que resulte en honra para nuestro Padre celestial *Jehov\u00e1*, le solicitamos por favor considerar previamente las instrucciones *CO-23-S*, que adjuntamos a esta carta.
+
+Su asignaci\u00f3n ser\u00e1 en la *${zonaId}: ${sub}*, *"${zonaDesc}"* de acuerdo al plano de referencia.
+
+El *D\u00cdA ASIGNADO* ser\u00e1: *SABADO*, en el *HORARIO INDICADO:* *${bloque}*, *${turno} TURNO*
+
+Por \u00faltimo, es fundamental su puntualidad por la afluencia de hermanos que habr\u00e1 el d\u00eda de Asamblea.
+
+Nos despedimos de usted, agradeciendo de antemano su colaboraci\u00f3n y pidiendo a nuestro Dios *Jehov\u00e1* que siga bendiciendo ricamente su arduo trabajo a favor de los intereses del Reino.
+
+*Sus Hermanos:*
+
+_Dpto. Acomodadores_
+
+*P.D.* _POR FAVOR SE HA PROGRAMADO UNA REUNI\u00d3N PREVIA A LA ASAMBLEA PARA CONSIDERAR PUNTOS IMPORTANTES Y NECESARIOS DE NUESTRA LABOR COMO ACOMODADORES Y EN CASO DE UNA POSIBLE EVACUACION, LA REUNION SER\u00c1 EL D\u00cdA MARTES 10 DE MARZO A HORAS 20:00 POR ZOOM SEG\u00daN EL SIGUIENTE ENLACE:_ https://zoom.us/j/3618783534 , *LA CONTRASE\u00d1A: 791937*`;
+      this.msgCopied = false;
+      this.showMsg = true;
+    },
+
+    waUrl() {
+      if (!this.msgPhone) return '#';
+      return 'https://wa.me/' + this.msgPhone + '?text=' + encodeURIComponent(this.msgText);
+    },
+
+    async copyMsg() {
+      try {
+        await navigator.clipboard.writeText(this.msgText);
+      } catch(e) {
+        const ta = document.getElementById('msg_ta');
+        ta.select(); document.execCommand('copy');
+      }
+      this.msgCopied = true;
+      setTimeout(() => { this.msgCopied = false; }, 2500);
+    },
+
+    printCarta(a) {
+      const nombre  = a.voluntario_nombre  || '—';
+      const cong    = a.congregacion_nombre || a.congregacion || '—';
+      const zonaId  = a.zona_id_zona        || a.zona_id    || '—';
+      const sub     = a.sub_sector          || '—';
+      const zonaDesc= a.zona_nombre_descriptivo || a.zona_nombre || '—';
+      const bloque  = a.bloque_maestro      || a.bloque_horario || '—';
+      const turno   = this.turnoFromBloque(bloque);
+      const fecha   = this.fechaLarga(a.fecha);
+
+      const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Carta de Asignación – ${nombre}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #111;
+         padding: 1.5cm 2cm; line-height: 1.45; }
+  .center { text-align: center; }
+  .italic { font-style: italic; }
+  h1 { font-size: 12pt; text-transform: uppercase; letter-spacing: 0.5px;
+       margin-bottom: 2px; }
+  h2 { font-size: 10pt; font-style: italic; font-weight: normal;
+       margin-bottom: 10px; }
+  .fecha { margin-bottom: 10px; }
+  .dept  { margin-bottom: 10px; font-weight: bold; text-transform: uppercase;
+           letter-spacing: 0.5px; }
+  .greeting { margin-bottom: 4px; }
+  .cong     { margin-bottom: 10px; }
+  p { margin-bottom: 8px; text-align: justify; }
+  .asignacion-box {
+    border: 1px solid #333; border-radius: 3px; padding: 8px 12px;
+    margin: 10px 0; background: #f5f5f5;
+  }
+  .asignacion-box p { margin-bottom: 3px; }
+  .firma { margin-top: 18px; }
+  .pd { margin-top: 12px; font-size: 9pt; }
+  @media print {
+    body { padding: 0; }
+    @page { size: A4 portrait; margin: 1.5cm 2cm; }
+  }
+</style>
+</head>
+<body>
+  <div class="center">
+    <h1>Asamblea de Circuito</h1>
+    <h2>"Tienen que adorarlo con espíritu y con verdad"</h2>
+  </div>
+  <p class="center fecha italic">${fecha}</p>
+  <p class="center dept">Departamento de Acomodadores</p>
+
+  <p class="greeting">Estimado Hermano: <strong>${nombre}</strong></p>
+  <p class="cong"><strong>Congr.:</strong> <em>${cong}</em></p>
+
+  <p><strong>Presente:</strong></p>
+
+  <p>A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregación, le invitamos a servir en este departamento en la Asamblea de Circuito a realizarse en fecha <strong>${fecha}</strong>, en vista de que se espera una notable asistencia, rogamos su colaboración al respecto.</p>
+
+  <p>Para poder brindar una recepción de calidad a nuestros hermanos e invitados, que resulte en honra para nuestro Padre celestial <strong>Jehová</strong>, le solicitamos por favor considerar previamente las instrucciones <strong>CO-23-S</strong>, que adjuntamos a esta carta.</p>
+
+  <div class="asignacion-box">
+    <p><strong>Zona asignada:</strong> ${zonaId}: ${sub} &ndash; <em>&ldquo;${zonaDesc}&rdquo;</em></p>
+    <p><strong>Día asignado:</strong> Sábado &nbsp;|&nbsp; <strong>Horario:</strong> ${bloque} &nbsp;|&nbsp; <strong>${turno} Turno</strong></p>
+    <p><strong>Fecha:</strong> ${fecha}</p>
+  </div>
+
+  <p>Por último, es fundamental su puntualidad por la afluencia de hermanos que habrá el día de Asamblea.</p>
+
+  <p>Nos despedimos de usted, agradeciendo de antemano su colaboración y pidiendo a nuestro Dios <strong>Jehová</strong> que siga bendiciendo ricamente su arduo trabajo a favor de los intereses del Reino.</p>
+
+  <div class="firma">
+    <p><strong>Sus Hermanos:</strong></p>
+    <br>
+    <p class="italic">Dpto. Acomodadores</p>
+  </div>
+
+  <div class="pd">
+    <p><strong>P.D.</strong> <em>Por favor se ha programado una reunión previa a la Asamblea para considerar puntos importantes y necesarios de nuestra labor como Acomodadores y en caso de una posible evacuación. La reunión será el día Martes 10 de Marzo a horas 20:00 por Zoom según el siguiente enlace:</em> https://zoom.us/j/3618783534 &nbsp; <strong>Contraseña: 791937</strong></p>
+  </div>
+</body>
+</html>`;
+
+      const w = window.open('', '_blank', 'width=900,height=750,menubar=yes,toolbar=yes');
+      if (!w) { alert('Permite las ventanas emergentes para generar el PDF.'); return; }
+      w.document.write(html);
+      w.document.close();
+      w.focus();
+      setTimeout(() => { w.print(); }, 600);
+    },
+
+    async save() {
+      this.err = '';
+      const { fecha, voluntario_id, capitan_id, zona_id, bloque_maestro } = this.f;
+      if (!fecha)          { this.err = 'La fecha es obligatoria.';          return; }
+      if (!voluntario_id)  { this.err = 'Selecciona un voluntario.';         return; }
+      if (!capitan_id)     { this.err = 'Selecciona un capitán.';            return; }
+      if (!zona_id)        { this.err = 'Selecciona una zona.';              return; }
+      if (!bloque_maestro) { this.err = 'Selecciona un bloque horario.';     return; }
+      this.loading = true;
+      const url    = this.editing ? `/api/asignaciones/${this.f.id}` : '/api/asignaciones';
+      const method = this.editing ? 'PUT' : 'POST';
+      try {
+        const res = await fetch(url, {
+          method, headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fecha:          this.f.fecha,
+            voluntario_id:  this.f.voluntario_id,
+            capitan_id:     this.f.capitan_id,
+            zona_id:        this.f.zona_id,
+            sub_sector:     this.f.sub_sector,
+            bloque_maestro: this.f.bloque_maestro,
+            horario_inicio: this.f.horario_inicio,
+            horario_fin:    this.f.horario_fin,
+            notas:          this.f.notas,
+          }),
+        });
+        if (res.ok) { location.reload(); return; }
+        const d = await res.json().catch(() => ({}));
+        this.err = d.error || `Error ${res.status}`;
+      } catch(e) { this.err = 'Error de conexión.'; }
+      this.loading = false;
+    },
+
+    async doDelete() {
+      await fetch(`/api/asignaciones/${this.delId}`, { method: 'DELETE' });
+      location.reload();
+    },
+  };
+}
+</script>
+{% endblock %}
