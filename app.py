@@ -8,14 +8,22 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "usher-logistics-dev-secret")
+#app = Flask(__name__)
+#app.secret_key = os.environ.get("SECRET_KEY", "usher-logistics-dev-secret")
 
 # ── Firebase init ─────────────────────────────────────────────────────────────
 def _init_firebase():
     if not firebase_admin._apps:
-        cred_path = os.environ.get("FIREBASE_CREDENTIALS", "key.json")
-        firebase_admin.initialize_app(credentials.Certificate(cred_path))
+        cred_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+
+        if cred_json:
+            cred_dict = json.loads(cred_json)
+            cred = credentials.Certificate(cred_dict)
+        else:
+            cred = credentials.Certificate("key.json")
+
+        firebase_admin.initialize_app(cred)
+
     return firestore.client()
 
 _db = _init_firebase()
