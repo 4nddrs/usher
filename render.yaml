@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: usher
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 2 --timeout 60
+    envVars:
+      - key: SECRET_KEY
+        sync: false          # Pegar el valor desde .env en el dashboard de Render
+      - key: FIREBASE_CREDENTIALS_JSON
+        sync: false          # Pegar el valor desde .env en el dashboard de Render
+      - key: PYTHON_VERSION
+        value: "3.11.0"
