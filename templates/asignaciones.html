@@ -82,9 +82,9 @@ const _CAPS  = {{ capitanes    | tojson }};
               </span>
             </td>
             <td class="px-4 py-3">
-              <p class="text-slate-300 font-medium">{{ a.zona_nombre }}</p>
-              {% if a.sub_sector %}
-              <p class="text-[11px] text-slate-500">{{ a.sub_sector }}</p>
+              <p class="font-bold text-white text-sm">{{ a.zona_id_zona or a.zona_nombre or '—' }}{% if a.sub_sector %} / {{ a.sub_sector }}{% endif %}</p>
+              {% if a.zona_nombre_descriptivo %}
+              <p class="text-xs text-slate-400 mt-0.5">{{ a.zona_nombre_descriptivo }}</p>
               {% endif %}
             </td>
             <td class="px-4 py-3 text-right">
@@ -434,7 +434,7 @@ function asigPage() {
 
     openAdd() {
       this.editing = false;
-      const today = new Date().toISOString().slice(0,10);
+      const today = '2026-03-14';
       this.f = { id:'', fecha: today, voluntario_id:'', capitan_id:'', zona_id:'', sub_sector:'', bloque_maestro:'', horario_inicio:'', horario_fin:'', notas:'' };
       this.err = ''; this.showForm = true;
     },
