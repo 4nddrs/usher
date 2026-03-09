@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+﻿{% extends "layout.html" %}
 {% block title %}Asignaciones{% endblock %}
 {% block page_title %}Asignaciones{% endblock %}
 
@@ -87,7 +87,7 @@ const _CAPS  = {{ capitanes    | tojson }};
               {% endif %}
             </td>
             <td class="px-4 py-3 text-right">
-              <div class="inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div class="inline-flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <button @click='printCarta({{ a | tojson | safe }})'
                         title="Descargar PDF"
                         class="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors">
@@ -507,7 +507,7 @@ Estimado Hermano: *${nombre}*
 
 A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregaci\u00f3n, le invitamos a servir en este departamento en la Asamblea de Circuito a realizarse en fecha *${fecha}*, en vista de que se espera una notable asistencia, rogamos su colaboraci\u00f3n al respecto.
 
-Para poder brindar una recepci\u00f3n de calidad a nuestros hermanos e invitados, que resulte en honra para nuestro Padre celestial *Jehov\u00e1*, le solicitamos por favor considerar previamente las instrucciones *CO-23-S*, que adjuntamos a esta carta.
+Para poder brindar una recepci\u00f3n de calidad a nuestros hermanos e invitados, que resulte en honra para nuestro Padre celestial *Jehov\u00e1*, le solicitamos por favor unirse al grupo de WhatsApp por medio del siguiente enlace: ( https://chat.whatsapp.com/DRJyFAku8v24k8J0QkO8jQ?mode=gi_t ) para recibir las instrucciones *CO-23-S* y el plano de *DISPOSICI\u00d3N DE ACOMODADORES*.
 
 Su asignaci\u00f3n ser\u00e1 en la *${zonaId}: ${sub}*, *"${zonaDesc}"* de acuerdo al plano de referencia.
 
@@ -521,7 +521,7 @@ Nos despedimos de usted, agradeciendo de antemano su colaboraci\u00f3n y pidiend
 
 _Dpto. Acomodadores_
 
-*P.D.* _POR FAVOR SE HA PROGRAMADO UNA REUNI\u00d3N PREVIA A LA ASAMBLEA PARA CONSIDERAR PUNTOS IMPORTANTES Y NECESARIOS DE NUESTRA LABOR COMO ACOMODADORES Y EN CASO DE UNA POSIBLE EVACUACION, LA REUNION SER\u00c1 EL D\u00cdA MARTES 10 DE MARZO A HORAS 20:00 POR ZOOM SEG\u00daN EL SIGUIENTE ENLACE:_ https://zoom.us/j/3618783534 , *LA CONTRASE\u00d1A: 791937*`;
+*P.D.* POR FAVOR SE HA PROGRAMADO UNA REUNI\u00d3N PREVIA A LA ASAMBLEA PARA CONSIDERAR PUNTOS IMPORTANTES Y NECESARIOS DE NUESTRA LABOR COMO ACOMODADORES Y EN CASO DE UNA POSIBLE EVACUACION, LA REUNION SER\u00c1 EL D\u00cdA *JUEVES 12 DE MARZO* A HORAS *20:00* POR ZOOM SEG\u00daN EL SIGUIENTE ENLACE: https://zoom.us/j/3618783534 , *LA CONTRASE\u00d1A: 791937*`;
       this.msgCopied = false;
       this.showMsg = true;
     },
