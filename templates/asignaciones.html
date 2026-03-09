@@ -71,6 +71,7 @@ const _CAPS  = {{ capitanes    | tojson }};
             <td class="px-4 py-3">
               <p class="font-semibold text-white text-xs">{{ a.fecha }}</p>
               <p class="text-[11px] text-slate-500 mt-0.5 font-mono">{{ a.bloque_maestro or a.bloque_horario or '—' }}</p>
+              <p class="text-[11px] text-slate-300 mt-1 sm:hidden">{{ a.voluntario_nombre }}</p>
             </td>
             <td class="px-4 py-3 hidden sm:table-cell">
               <span class="font-medium text-slate-300">{{ a.voluntario_nombre }}</span>
