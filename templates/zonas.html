@@ -39,19 +39,20 @@
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
     {% for z in zonas %}
     <div class="bg-slate-800/60 rounded-2xl border border-slate-700/50 card-glow group"
-         data-nombre="{{ z.nombre | lower }}"
+         data-nombre="{{ (z.id_zona ~ ' ' ~ z.nombre) | lower }}"
          x-show="!q || $el.dataset.nombre.includes(q.toLowerCase())"
          x-cloak>
       <!-- Card header -->
       <div class="flex items-start justify-between gap-2 p-5 pb-3">
         <div class="flex items-center gap-3 min-w-0">
           <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700
-                      flex items-center justify-center text-sm font-bold text-white shrink-0">
-            {{ z.nombre[:2].upper() }}
+                      flex items-center justify-center text-xs font-bold text-white shrink-0">
+            {{ z.id_zona }}
           </div>
           <div class="min-w-0">
-            <p class="font-bold text-white truncate">{{ z.nombre }}</p>
-            <p class="text-xs text-slate-500">{{ z.sub_sectores | length }} sub-sector{{ 'es' if z.sub_sectores|length != 1 }}</p>
+            <p class="font-bold text-white truncate">{{ z.id_zona }}</p>
+            <p class="text-xs text-slate-400 truncate">{{ z.nombre }}</p>
+            <p class="text-xs text-slate-500 mt-0.5">{{ z.sub_sectores | length }} sub-sector{{ 'es' if z.sub_sectores|length != 1 }}</p>
           </div>
         </div>
         <!-- Actions -->
@@ -131,12 +132,24 @@
       </div>
 
       <div class="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
-        <!-- Nombre -->
+        <!-- ID Zona -->
         <div>
           <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
-            Nombre de la zona <span class="text-red-400">*</span>
+            ID de zona <span class="text-red-400">*</span>
           </label>
-          <input x-model="f.nombre" id="zn_nombre" type="text" placeholder="Ej: Zona Norte"
+          <input x-model="f.id_zona" id="zn_id_zona" type="text" placeholder="Ej: Z-1"
+                 :readonly="editing"
+                 :class="editing ? 'opacity-50 cursor-not-allowed' : ''"
+                 class="inp w-full bg-slate-800 border border-slate-700 rounded-xl
+                        px-4 py-2.5 text-sm text-white placeholder-slate-500 transition uppercase"/>
+        </div>
+
+        <!-- Nombre descriptivo -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+            Nombre descriptivo <span class="text-red-400">*</span>
+          </label>
+          <input x-model="f.nombre" id="zn_nombre" type="text" placeholder="Ej: Graderías"
                  class="inp w-full bg-slate-800 border border-slate-700 rounded-xl
                         px-4 py-2.5 text-sm text-white placeholder-slate-500 transition"/>
         </div>
@@ -239,16 +252,17 @@ function zonasPage() {
 
     openAdd() {
       this.editing = false;
-      this.f = { id:'', nombre:'', sub_sectores: [] };
+      this.f = { id:'', id_zona:'', nombre:'', sub_sectores: [] };
       this.newSub = ''; this.err = '';
       this.showForm = true;
-      this.$nextTick(() => document.getElementById('zn_nombre')?.focus());
+      this.$nextTick(() => document.getElementById('zn_id_zona')?.focus());
     },
 
     openEdit(z) {
       this.editing = true;
       this.f = {
         id:           String(z.id || ''),
+        id_zona:      String(z.id_zona || ''),
         nombre:       String(z.nombre || ''),
         sub_sectores: Array.isArray(z.sub_sectores) ? [...z.sub_sectores] : [],
       };
@@ -260,8 +274,10 @@ function zonasPage() {
 
     async save() {
       this.err = '';
-      const nombre = this.f.nombre.trim();
-      if (!nombre) { this.err = 'El nombre es obligatorio.'; return; }
+      const id_zona = this.f.id_zona.trim().toUpperCase();
+      const nombre  = this.f.nombre.trim();
+      if (!this.editing && !id_zona) { this.err = 'El ID de zona es obligatorio.'; return; }
+      if (!nombre) { this.err = 'El nombre descriptivo es obligatorio.'; return; }
       if (this.newSub.trim()) { this.addSub(); }
       this.loading = true;
       const url    = this.editing ? `/api/zonas/${this.f.id}` : '/api/zonas';
@@ -269,7 +285,7 @@ function zonasPage() {
       try {
         const res = await fetch(url, {
           method, headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre, sub_sectores: this.f.sub_sectores }),
+          body: JSON.stringify({ id_zona, nombre, sub_sectores: this.f.sub_sectores }),
         });
         if (res.ok) { location.reload(); return; }
         const d = await res.json().catch(() => ({}));

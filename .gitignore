@@ -42,9 +42,15 @@ htmlcov/
 Thumbs.db
 desktop.ini
 
+# ── Docs / materiales internos ────────────────────────────────────────────────
+docs/
+
 # ── Logs ──────────────────────────────────────────────────────────────────────
 *.log
 logs/
 
 # ── Gunicorn / uWSGI ──────────────────────────────────────────────────────────
 gunicorn.pid
+
+# Files
+.volu

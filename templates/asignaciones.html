@@ -251,7 +251,7 @@ const _CAPS  = {{ capitanes    | tojson }};
                            px-3 py-2.5 text-sm text-white transition appearance-none cursor-pointer">
               <option value="">Seleccionar…</option>
               <template x-for="z in zonas" :key="z.id">
-                <option :value="z.id" x-text="z.nombre"
+                <option :value="z.id" x-text="z.id_zona + (z.nombre ? ' — ' + z.nombre : '')"
                         :selected="f.zona_id === z.id"></option>
               </template>
             </select>
