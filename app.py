@@ -16,7 +16,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "usher-logistics-dev-secret")
 
 def _init_firebase():
     if not firebase_admin._apps:
-        cred_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+        cred_json = os.environ.get("FIREBASE_CREDENTIALS")
 
         if cred_json:
             cred_dict = json.loads(cred_json)
