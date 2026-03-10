@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, render_template, request, jsonify, flash
@@ -11,6 +12,27 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "usher-logistics-dev-secret")
+
+# ── Simple in-memory TTL cache ────────────────────────────────────────────────
+_CACHE: dict = {}
+_TTL_STATIC = 300   # 5 min — congregaciones, voluntarios, zonas (cambian poco)
+_TTL_MAPA   = 180   # 3 min — asignaciones del mapa (fecha fija)
+_TTL_DASH   = 120   # 2 min — stats del dashboard
+
+def _cache_get(key):
+    entry = _CACHE.get(key)
+    if entry and time.monotonic() < entry[1]:
+        return entry[0]
+    return None
+
+def _cache_set(key, data, ttl=_TTL_STATIC):
+    _CACHE[key] = (data, time.monotonic() + ttl)
+
+def _cache_bust(*prefixes):
+    """Remove all cache entries whose key starts with any of the given prefixes."""
+    for k in list(_CACHE.keys()):
+        if any(k.startswith(p) for p in prefixes):
+            del _CACHE[k]
 
 # ── Firebase init ─────────────────────────────────────────────────────────────
 
@@ -47,6 +69,16 @@ def _fetch(collection, order_by=None, direction=None, limit=None, where=None):
     if limit:
         ref = ref.limit(limit)
     return [{"id": d.id, **d.to_dict()} for d in ref.get()]
+
+
+def _fetch_cached(collection, cache_key, ttl=_TTL_STATIC, **kwargs):
+    """Like _fetch but with TTL cache. kwargs forwarded to _fetch."""
+    hit = _cache_get(cache_key)
+    if hit is not None:
+        return hit
+    data = _fetch(collection, **kwargs)
+    _cache_set(cache_key, data, ttl)
+    return data
 
 
 def parallel(*fns):
@@ -94,10 +126,11 @@ def dashboard():
     today = datetime.now().strftime("%Y-%m-%d")
     try:
         congs, vols, zonas, asigs = parallel(
-            lambda: _fetch("congregaciones"),
-            lambda: _fetch("voluntarios"),
-            lambda: _fetch("zonas"),
-            lambda: _fetch("asignaciones"),
+            lambda: _fetch_cached("congregaciones", "congs", ttl=_TTL_STATIC, order_by="nombre"),
+            lambda: _fetch_cached("voluntarios",    "vols",  ttl=_TTL_STATIC, order_by="nombre"),
+            lambda: _fetch_cached("zonas",          "zonas", ttl=_TTL_STATIC, order_by="id_zona"),
+            lambda: _fetch_cached("asignaciones",   "dash:asigs", ttl=_TTL_DASH,
+                                  order_by="fecha", direction=firestore.Query.DESCENDING, limit=500),
         )
 
         congregaciones_count = len(congs)
@@ -157,17 +190,14 @@ def dashboard():
 # ═══════════════════════════════════════════════════════════════════════════════
 @app.route("/congregaciones")
 def congregaciones():
-    db = get_db()
-    docs = db.collection("congregaciones").order_by("nombre").get()
-    data = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+    data = _fetch_cached("congregaciones", "congs", ttl=_TTL_STATIC, order_by="nombre")
     return render_template("congregaciones.html", congregaciones=data)
 
 
 @app.route("/api/congregaciones", methods=["GET"])
 def api_list_congregaciones():
-    db = get_db()
-    docs = db.collection("congregaciones").order_by("nombre").get()
-    return jsonify([{"id": doc.id, **doc.to_dict()} for doc in docs])
+    data = _fetch_cached("congregaciones", "congs", ttl=_TTL_STATIC, order_by="nombre")
+    return jsonify(data)
 
 
 @app.route("/api/congregaciones", methods=["POST"])
@@ -179,6 +209,7 @@ def api_add_congregacion():
         return jsonify({"error": "El nombre es requerido"}), 400
     doc_id = nombre.upper().replace(" ", "_")
     db.collection("congregaciones").document(doc_id).set({"nombre": nombre})
+    _cache_bust("congs")
     return jsonify({"id": doc_id, "nombre": nombre}), 201
 
 
@@ -190,6 +221,7 @@ def api_update_congregacion(doc_id):
     if not nombre:
         return jsonify({"error": "El nombre es requerido"}), 400
     db.collection("congregaciones").document(doc_id).update({"nombre": nombre})
+    _cache_bust("congs")
     return jsonify({"success": True})
 
 
@@ -197,6 +229,7 @@ def api_update_congregacion(doc_id):
 def api_delete_congregacion(doc_id):
     db = get_db()
     db.collection("congregaciones").document(doc_id).delete()
+    _cache_bust("congs")
     return jsonify({"success": True})
 
 
@@ -206,8 +239,8 @@ def api_delete_congregacion(doc_id):
 @app.route("/voluntarios")
 def voluntarios():
     vols_raw, congs_raw = parallel(
-        lambda: _fetch("voluntarios",    order_by="nombre"),
-        lambda: _fetch("congregaciones", order_by="nombre"),
+        lambda: _fetch_cached("voluntarios",    "vols",  ttl=_TTL_STATIC, order_by="nombre"),
+        lambda: _fetch_cached("congregaciones", "congs", ttl=_TTL_STATIC, order_by="nombre"),
     )
     cong_map  = {c["id"]: c["nombre"] for c in congs_raw}
     cong_list = [{"id": c["id"], "nombre": c["nombre"]} for c in congs_raw]
@@ -239,6 +272,7 @@ def api_add_voluntario():
         "capitan":         capitan,
     }
     _, ref = db.collection("voluntarios").add(new_data)
+    _cache_bust("vols")
     return jsonify({"id": ref.id, **new_data}), 201
 
 
@@ -254,6 +288,7 @@ def api_update_voluntario(doc_id):
         "congregacion_id": (body.get("congregacion_id") or "").strip(),
         "capitan":         capitan,
     })
+    _cache_bust("vols")
     return jsonify({"success": True})
 
 
@@ -261,6 +296,7 @@ def api_update_voluntario(doc_id):
 def api_delete_voluntario(doc_id):
     db = get_db()
     db.collection("voluntarios").document(doc_id).delete()
+    _cache_bust("vols")
     return jsonify({"success": True})
 
 
@@ -269,9 +305,8 @@ def api_delete_voluntario(doc_id):
 # ═══════════════════════════════════════════════════════════════════════════════
 @app.route("/zonas")
 def zonas():
-    db   = get_db()
-    docs = db.collection("zonas").order_by("id_zona").get()
-    data = [_norm_zona({"id": doc.id, **doc.to_dict()}) for doc in docs]
+    data = _fetch_cached("zonas", "zonas", ttl=_TTL_STATIC, order_by="id_zona")
+    data = [_norm_zona(z) for z in data]
     return render_template("zonas.html", zonas=data)
 
 
@@ -290,6 +325,7 @@ def api_add_zona():
     )
     new_data = {"id_zona": id_zona, "nombre_descriptivo": nombre, "sub_sectores": sub_sectores}
     db.collection("zonas").document(id_zona).set(new_data)
+    _cache_bust("zonas")
     return jsonify({"id": id_zona, **new_data}), 201
 
 
@@ -306,6 +342,7 @@ def api_update_zona(doc_id):
         "nombre_descriptivo": (body.get("nombre") or "").strip(),
         "sub_sectores":       sub_sectores,
     })
+    _cache_bust("zonas")
     return jsonify({"success": True})
 
 
@@ -313,14 +350,17 @@ def api_update_zona(doc_id):
 def api_delete_zona(doc_id):
     db = get_db()
     db.collection("zonas").document(doc_id).delete()
+    _cache_bust("zonas")
     return jsonify({"success": True})
 
 
 @app.route("/api/zonas/<zona_id>/sub_sectores")
 def api_sub_sectores(zona_id):
-    db  = get_db()
-    doc = db.collection("zonas").document(zona_id).get()
-    return jsonify(doc.to_dict().get("sub_sectores", []) if doc.exists else [])
+    zonas_data = _fetch_cached("zonas", "zonas", ttl=_TTL_STATIC, order_by="id_zona")
+    for z in zonas_data:
+        if z["id"] == zona_id:
+            return jsonify(z.get("sub_sectores", []))
+    return jsonify([])
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -329,9 +369,9 @@ def api_sub_sectores(zona_id):
 @app.route("/asignaciones")
 def asignaciones():
     congs_raw, vols_raw, zonas_raw, asig_raw = parallel(
-        lambda: _fetch("congregaciones", order_by="nombre"),
-        lambda: _fetch("voluntarios",    order_by="nombre"),
-        lambda: _fetch("zonas",          order_by="id_zona"),
+        lambda: _fetch_cached("congregaciones", "congs",  ttl=_TTL_STATIC, order_by="nombre"),
+        lambda: _fetch_cached("voluntarios",    "vols",   ttl=_TTL_STATIC, order_by="nombre"),
+        lambda: _fetch_cached("zonas",          "zonas",  ttl=_TTL_STATIC, order_by="id_zona"),
         lambda: _fetch("asignaciones",   order_by="fecha",
                        direction=firestore.Query.DESCENDING, limit=300),
     )
@@ -383,6 +423,7 @@ def api_add_asignacion():
         "fecha": body.get("fecha", datetime.now().strftime("%Y-%m-%d")),
     }
     _, ref = db.collection("asignaciones").add(new_data)
+    _cache_bust("mapa:asigs", "dash:asigs")
     return jsonify({"id": ref.id}), 201
 
 
@@ -402,6 +443,7 @@ def api_update_asignacion(doc_id):
         },
         "fecha": body.get("fecha", ""),
     })
+    _cache_bust("mapa:asigs", "dash:asigs")
     return jsonify({"success": True})
 
 
@@ -409,7 +451,49 @@ def api_update_asignacion(doc_id):
 def api_delete_asignacion(doc_id):
     db = get_db()
     db.collection("asignaciones").document(doc_id).delete()
+    _cache_bust("mapa:asigs", "dash:asigs")
     return jsonify({"success": True})
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  MAPA
+# ═══════════════════════════════════════════════════════════════════════════════
+MAPA_FECHA = "2026-03-14"
+
+@app.route("/mapa")
+def mapa():
+    zonas_raw, asig_raw, vols_raw, congs_raw = parallel(
+        lambda: _fetch_cached("zonas",          "zonas",      ttl=_TTL_STATIC, order_by="id_zona"),
+        lambda: _fetch_cached("asignaciones",   "mapa:asigs", ttl=_TTL_MAPA,   where=("fecha", "==", MAPA_FECHA)),
+        lambda: _fetch_cached("voluntarios",    "vols",       ttl=_TTL_STATIC, order_by="nombre"),
+        lambda: _fetch_cached("congregaciones", "congs",      ttl=_TTL_STATIC),
+    )
+
+    zonas    = [_norm_zona(z) for z in zonas_raw]
+    vol_map  = {v["id"]: v for v in vols_raw}
+    cong_map = {c["id"]: c.get("nombre", "—") for c in congs_raw}
+    zona_map = {z["id"]: z for z in zonas}
+
+    asig_list = []
+    for a in asig_raw:
+        vid  = a.get("voluntario_id", "")
+        vol  = vol_map.get(vid, {})
+        cong = cong_map.get(vol.get("congregacion_id", ""), "—")
+        zona = zona_map.get(a.get("zona_id", ""), {})
+        a["voluntario_nombre"]   = vol.get("nombre", "—")
+        a["congregacion_nombre"] = cong
+        a["capitan_nombre"]      = vol_map.get(a.get("capitan_id", ""), {}).get("nombre", "—")
+        a["celular"]             = vol.get("celular", "")
+        a["zona_id_zona"]        = zona.get("id_zona", a.get("zona_id", "—"))
+        a["zona_nombre"]         = zona.get("nombre", "—")
+        asig_list.append(a)
+
+    return render_template(
+        "mapa.html",
+        zonas_data=zonas,
+        asignaciones=asig_list,
+        fecha=MAPA_FECHA,
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

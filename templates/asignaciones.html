@@ -12,7 +12,7 @@ const _CAPS  = {{ capitanes    | tojson }};
 <div x-data="asigPage()">
 
   <!-- Header row -->
-  <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
     <div class="flex flex-wrap items-center gap-2">
       <!-- Search -->
       <div class="relative">
@@ -20,17 +20,14 @@ const _CAPS  = {{ capitanes    | tojson }};
              fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
         </svg>
-        <input x-model="q" type="search" placeholder="Buscar…"
+        <input x-model="q" type="search" placeholder="Buscar nombre, zona…"
                class="inp bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2
-                      text-sm text-white placeholder-slate-500 w-44 sm:w-52 transition"/>
+                      text-sm text-white placeholder-slate-500 w-44 sm:w-56 transition"/>
       </div>
       <!-- Date filter -->
       <input x-model="fDate" type="date"
              class="inp bg-slate-800 border border-slate-700 rounded-xl px-3 py-2
                     text-sm text-white transition [color-scheme:dark]"/>
-      <!-- Clear -->
-      <button x-show="q||fDate" @click="q='';fDate=''" x-cloak
-              class="text-xs text-slate-400 hover:text-white transition-colors px-2">Limpiar</button>
     </div>
     <button @click="openAdd()"
             class="btn-primary flex items-center gap-2 text-white font-semibold text-sm rounded-xl px-4 py-2.5">
@@ -41,11 +38,117 @@ const _CAPS  = {{ capitanes    | tojson }};
     </button>
   </div>
 
+  <!-- Filter bar -->
+  <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl px-4 py-3 mb-4 flex flex-wrap items-center gap-3">
+    <!-- Zona -->
+    <div class="flex items-center gap-2 min-w-0">
+      <label class="text-[11px] text-slate-500 font-semibold uppercase tracking-wider whitespace-nowrap">Zona</label>
+      <select x-model="fZona"
+              class="inp bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white
+                     appearance-none cursor-pointer transition min-w-[90px]">
+        <option value="">Todas</option>
+        <template x-for="z in zonas" :key="z.id">
+          <option :value="z.id" x-text="z.id_zona + (z.nombre ? ' — ' + z.nombre : '')"></option>
+        </template>
+      </select>
+    </div>
+    <div class="w-px h-5 bg-slate-700 hidden sm:block"></div>
+    <!-- Subsector (depends on fZona) -->
+    <div class="flex items-center gap-2" x-show="fZona && selectedFZona()?.sub_sectores?.length">
+      <label class="text-[11px] text-slate-500 font-semibold uppercase tracking-wider whitespace-nowrap">Sector</label>
+      <select x-model="fSector"
+              class="inp bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white
+                     appearance-none cursor-pointer transition">
+        <option value="">Todos</option>
+        <template x-for="s in (selectedFZona()?.sub_sectores || [])" :key="s">
+          <option :value="s" x-text="s"></option>
+        </template>
+      </select>
+    </div>
+    <div class="w-px h-5 bg-slate-700 hidden sm:block" x-show="fZona && selectedFZona()?.sub_sectores?.length"></div>
+    <!-- Capitán -->
+    <div class="flex items-center gap-2">
+      <label class="text-[11px] text-slate-500 font-semibold uppercase tracking-wider whitespace-nowrap">Capitán</label>
+      <select x-model="fCap"
+              class="inp bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white
+                     appearance-none cursor-pointer transition min-w-[110px]">
+        <option value="">Todos</option>
+        <template x-for="c in caps" :key="c.id">
+          <option :value="c.id" x-text="c.nombre"></option>
+        </template>
+      </select>
+    </div>
+    <div class="w-px h-5 bg-slate-700 hidden sm:block"></div>
+    <!-- Bloque -->
+    <div class="flex items-center gap-2">
+      <label class="text-[11px] text-slate-500 font-semibold uppercase tracking-wider whitespace-nowrap">Horario</label>
+      <select x-model="fBloque"
+              class="inp bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white
+                     appearance-none cursor-pointer transition min-w-[110px]">
+        <option value="">Todos</option>
+        <template x-for="b in bloques" :key="b.label">
+          <option :value="b.label" x-text="b.label"></option>
+        </template>
+      </select>
+    </div>
+    <div class="w-px h-5 bg-slate-700 hidden sm:block"></div>
+    <!-- Agrupación -->
+    <div class="flex items-center gap-2">
+      <label class="text-[11px] text-slate-500 font-semibold uppercase tracking-wider whitespace-nowrap">Agrupar</label>
+      <select x-model="groupBy"
+              class="inp bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white
+                     appearance-none cursor-pointer transition">
+        <option value="">Sin agrupar</option>
+        <option value="zona">Por zona</option>
+        <option value="capitan">Por capitán</option>
+        <option value="bloque">Por horario</option>
+        <option value="fecha">Por fecha</option>
+      </select>
+    </div>
+    <!-- Clear all -->
+    <button x-show="hasFilters()" @click="clearFilters()" x-cloak
+            class="ml-auto text-xs text-slate-400 hover:text-white transition-colors flex items-center gap-1">
+      <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+      Limpiar
+    </button>
+  </div>
+
   <!-- Summary chips -->
   <div class="flex flex-wrap items-center gap-2 mb-4">
     <span class="chip bg-slate-800 text-slate-400 border border-slate-700">
       Total <strong class="text-white ml-1">{{ asignaciones|length }}</strong>
     </span>
+    <span x-show="hasFilters()" x-cloak class="chip bg-cyan-500/10 text-cyan-400 border border-cyan-500/25">
+      Mostrando <strong class="ml-1" x-text="visibleCount()"></strong>
+    </span>
+    <!-- Active filter pills -->
+    <template x-if="fZona">
+      <span class="chip bg-violet-500/10 text-violet-400 border border-violet-500/25 cursor-pointer" @click="fZona='';fSector=''">
+        <span x-text="zonas.find(z=>z.id===fZona)?.id_zona || fZona"></span>
+        <svg class="w-3 h-3 ml-1 inline" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </span>
+    </template>
+    <template x-if="fSector">
+      <span class="chip bg-violet-500/10 text-violet-400 border border-violet-500/25 cursor-pointer" @click="fSector=''">
+        Sector <span x-text="fSector"></span>
+        <svg class="w-3 h-3 ml-1 inline" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </span>
+    </template>
+    <template x-if="fCap">
+      <span class="chip bg-amber-500/10 text-amber-400 border border-amber-500/25 cursor-pointer" @click="fCap=''">
+        <svg class="w-2.5 h-2.5 inline mr-0.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+        <span x-text="caps.find(c=>c.id===fCap)?.nombre || fCap"></span>
+        <svg class="w-3 h-3 ml-1 inline" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </span>
+    </template>
+    <template x-if="fBloque">
+      <span class="chip bg-blue-500/10 text-blue-400 border border-blue-500/25 cursor-pointer" @click="fBloque=''">
+        ⏱ <span x-text="fBloque"></span>
+        <svg class="w-3 h-3 ml-1 inline" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </span>
+    </template>
   </div>
 
   <!-- Table card -->
@@ -61,11 +164,19 @@ const _CAPS  = {{ capitanes    | tojson }};
             <th class="px-4 py-3 text-[11px] text-slate-500 font-semibold uppercase tracking-wider text-right">Acc.</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-700/30">
+        <tbody class="divide-y divide-slate-700/30" id="asig-tbody">
           {% for a in asignaciones %}
           <tr class="hover:bg-slate-700/30 transition-colors group"
-              data-text="{{ (a.voluntario_nombre ~ ' ' ~ a.zona_nombre ~ ' ' ~ a.sub_sector ~ ' ' ~ a.fecha ~ ' ' ~ (a.bloque_maestro or '')) | lower }}"
+              data-text="{{ (a.voluntario_nombre ~ ' ' ~ a.congregacion_nombre ~ ' ' ~ a.zona_id_zona ~ ' ' ~ a.sub_sector ~ ' ' ~ a.fecha ~ ' ' ~ (a.bloque_maestro or '') ~ ' ' ~ (a.capitan_nombre or '')) | lower }}"
               data-fecha="{{ a.fecha }}"
+              data-zona="{{ a.zona_id }}"
+              data-sector="{{ a.sub_sector | lower }}"
+              data-cap="{{ a.capitan_id }}"
+              data-bloque="{{ a.bloque_maestro or '' }}"
+              data-group-zona="{{ a.zona_id_zona or a.zona_nombre or '—' }}"
+              data-group-cap="{{ a.capitan_nombre or '—' }}"
+              data-group-bloque="{{ a.bloque_maestro or '—' }}"
+              data-group-fecha="{{ a.fecha or '—' }}"
               x-show="rowVisible($el)"
               x-cloak>
             <td class="px-4 py-3">
@@ -74,7 +185,8 @@ const _CAPS  = {{ capitanes    | tojson }};
               <p class="text-[11px] text-slate-300 mt-1 sm:hidden">{{ a.voluntario_nombre }}</p>
             </td>
             <td class="px-4 py-3 hidden sm:table-cell">
-              <span class="font-medium text-slate-300">{{ a.voluntario_nombre }}</span>
+              <p class="font-medium text-slate-300">{{ a.voluntario_nombre }}</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">{{ a.congregacion_nombre }}</p>
             </td>
             <td class="px-4 py-3 hidden md:table-cell">
               <span class="chip bg-amber-500/10 text-amber-400 border border-amber-500/20">
@@ -146,7 +258,7 @@ const _CAPS  = {{ capitanes    | tojson }};
     <div x-show="noResults()" x-cloak
          class="flex flex-col items-center py-12 gap-2 border-t border-slate-700/30">
       <p class="text-sm text-slate-500">Sin resultados para el filtro actual</p>
-      <button @click="q='';fDate=''" class="text-xs text-cyan-400 hover:text-cyan-300 transition-colors">Limpiar filtros</button>
+      <button @click="clearFilters()" class="text-xs text-cyan-400 hover:text-cyan-300 transition-colors">Limpiar filtros</button>
     </div>
   </div>
 
@@ -396,7 +508,8 @@ const _CAPS  = {{ capitanes    | tojson }};
 <script>
 function asigPage() {
   return {
-    q: '', fDate: '', showForm: false, showDel: false, showMsg: false,
+    q: '', fDate: '', fZona: '', fSector: '', fCap: '', fBloque: '', groupBy: '',
+    showForm: false, showDel: false, showMsg: false,
     editing: false, loading: false, err:'', delId:'', msgText: '', msgCopied: false, msgPhone: '',
     f: { id:'', fecha:'', voluntario_id:'', capitan_id:'', zona_id:'', sub_sector:'', bloque_maestro:'', horario_inicio:'', horario_fin:'', notas:'' },
     vols:   _VOLS,
@@ -411,20 +524,99 @@ function asigPage() {
       { label: '15:00 – 17:00', inicio: '15:00', fin: '17:00' },
     ],
 
-    selectedZona() { return this.zonas.find(z => z.id === this.f.zona_id); },
+    selectedZona()  { return this.zonas.find(z => z.id === this.f.zona_id); },
+    selectedFZona() { return this.zonas.find(z => z.id === this.fZona); },
+
+    hasFilters() {
+      return !!(this.q || this.fDate || this.fZona || this.fSector || this.fCap || this.fBloque);
+    },
+
+    clearFilters() {
+      this.q = ''; this.fDate = ''; this.fZona = ''; this.fSector = '';
+      this.fCap = ''; this.fBloque = '';
+    },
 
     rowVisible(el) {
-      const text  = (el.dataset.text  || '').toLowerCase();
-      const fecha = (el.dataset.fecha || '');
-      const qOk   = !this.q     || text.includes(this.q.toLowerCase());
-      const dOk   = !this.fDate || fecha === this.fDate;
-      return qOk && dOk;
+      const text   = (el.dataset.text   || '').toLowerCase();
+      const fecha  = (el.dataset.fecha  || '');
+      const zona   = (el.dataset.zona   || '');
+      const sector = (el.dataset.sector || '').toLowerCase();
+      const cap    = (el.dataset.cap    || '');
+      const bloque = (el.dataset.bloque || '');
+      return (
+        (!this.q       || text.includes(this.q.toLowerCase())) &&
+        (!this.fDate   || fecha  === this.fDate) &&
+        (!this.fZona   || zona   === this.fZona) &&
+        (!this.fSector || sector === this.fSector.toLowerCase()) &&
+        (!this.fCap    || cap    === this.fCap) &&
+        (!this.fBloque || bloque === this.fBloque)
+      );
+    },
+
+    visibleCount() {
+      return [...document.querySelectorAll('tbody tr[data-text]')]
+        .filter(r => this.rowVisible(r)).length;
     },
 
     noResults() {
-      if (!this.q && !this.fDate) return false;
-      const rows = document.querySelectorAll('tbody tr[data-text]');
-      return [...rows].every(r => !this.rowVisible(r));
+      if (!this.hasFilters()) return false;
+      return this.visibleCount() === 0;
+    },
+
+    // ── Grouping ────────────────────────────────────────────────────────────
+    _groupField() {
+      return { zona: 'group-zona', capitan: 'group-cap', bloque: 'group-bloque', fecha: 'group-fecha' }[this.groupBy] || null;
+    },
+
+    _applyGroups() {
+      const tbody = document.getElementById('asig-tbody');
+      if (!tbody) return;
+
+      // Remove old group headers
+      tbody.querySelectorAll('tr.group-header').forEach(r => r.remove());
+
+      const field = this._groupField();
+      if (!field) return;
+
+      const rows = [...tbody.querySelectorAll('tr[data-text]')];
+      let lastGroup = null;
+
+      rows.forEach(row => {
+        if (!this.rowVisible(row)) return;
+        const val = row.dataset[field.replace('-', '')] || '—';
+        if (val !== lastGroup) {
+          lastGroup = val;
+          const tr = document.createElement('tr');
+          tr.className = 'group-header bg-slate-700/40 border-t border-slate-600/50';
+          tr.innerHTML = `<td colspan="5" class="px-4 py-1.5">
+            <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">${val}</span>
+            <span class="ml-2 text-[10px] text-slate-500" data-group-count="${val}"></span>
+          </td>`;
+          tbody.insertBefore(tr, row);
+        }
+      });
+
+      // Count per group
+      const counts = {};
+      rows.filter(r => this.rowVisible(r)).forEach(r => {
+        const v = r.dataset[field.replace('-','')] || '—';
+        counts[v] = (counts[v] || 0) + 1;
+      });
+      tbody.querySelectorAll('[data-group-count]').forEach(el => {
+        const v = el.dataset.groupCount;
+        el.textContent = counts[v] ? `(${counts[v]})` : '';
+      });
+    },
+
+    init() {
+      this.$watch('q',       () => this.$nextTick(() => this._applyGroups()));
+      this.$watch('fDate',   () => this.$nextTick(() => this._applyGroups()));
+      this.$watch('fZona',   () => { this.fSector = ''; this.$nextTick(() => this._applyGroups()); });
+      this.$watch('fSector', () => this.$nextTick(() => this._applyGroups()));
+      this.$watch('fCap',    () => this.$nextTick(() => this._applyGroups()));
+      this.$watch('fBloque', () => this.$nextTick(() => this._applyGroups()));
+      this.$watch('groupBy', () => this.$nextTick(() => this._applyGroups()));
+      this.$nextTick(() => this._applyGroups());
     },
 
     selectBloque(label) {
