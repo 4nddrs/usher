@@ -262,7 +262,7 @@ const _ZONAS_DATA   = {{ zonas_data   | tojson }};
                 stroke-width="1.5"
                 d="M 795 353 A 430 530 0 0 1 795 627 L 699 597 A 330 415 0 0 0 699 383 Z"
                 class="transition-all duration-200"/>
-          <text x="762" y="362" text-anchor="middle" fill="#f9a8d4" font-size="9" font-family="Inter,sans-serif" font-weight="800" pointer-events="none" opacity="0.9">ZONA 7</text>
+          <text x="775" y="430" text-anchor="middle" fill="#f9a8d4" font-size="13" font-family="Inter,sans-serif" font-weight="800" pointer-events="none" opacity="0.9">ZONA 7</text>
           <!-- C top inner (deg≈347, inner col rx≈350) --> <g @click.stop="selectSector('Z-7','C')" style="cursor:pointer">
             <circle cx="721" cy="391" r="14" :fill="activeSector==='Z-7|C'?'#ec4899':'#14040d'" :stroke="activeSector==='Z-7|C'?'#fff':'#ec4899'" stroke-width="2.5" class="transition-all duration-150" filter="url(#dot-shadow)"/>
             <text x="721" y="396" text-anchor="middle" fill="white" font-size="10" font-family="Inter,sans-serif" font-weight="800" pointer-events="none">C</text>
@@ -600,10 +600,19 @@ function mapaPage() {
       const zonaId  = a.zona_id_zona || a.zona_id || '?';
       const sector  = a.sub_sector || '?';
       const zonaNom = a.zona_nombre || '—';
-      const turno   = a.bloque_maestro || '—';
       const inicio  = a.horario?.inicio || '?';
       const fin     = a.horario?.fin || '?';
       const cel     = (a.celular || '').replace(/\D/g, '');
+
+      const turnoMap = {
+        '07:30': { '12:30': '1er turno', '10:00': '1er turno', '08:45': '1er turno' },
+        '08:45': { '10:00': '2do turno' },
+        '10:00': { '12:30': '2do turno', '11:15': '3er turno' },
+        '11:15': { '12:30': '4to turno' },
+        '12:30': { '17:00': '2do turno', '15:00': '3er turno' },
+        '15:00': { '17:00': '4to turno' },
+      };
+      const turno = (turnoMap[inicio] && turnoMap[inicio][fin]) || a.bloque_maestro || '—';
 
       const msg =
 `*Recordatorio de Asignación — Asamblea de Circuito*
