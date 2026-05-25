@@ -54,3 +54,4 @@ gunicorn.pid
 
 # Files
 .volu
+.cleanBdD.py

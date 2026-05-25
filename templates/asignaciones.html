@@ -516,12 +516,12 @@ function asigPage() {
     zonas:  _ZONAS,
     caps:   _CAPS,
     bloques: [
-      { label: '7:30 – 12:30',  inicio: '07:30', fin: '12:30' },
-      { label: '12:30 – 17:00', inicio: '12:30', fin: '17:00' },
-      { label: '7:30 – 10:00',  inicio: '07:30', fin: '10:00' },
-      { label: '10:00 – 12:30', inicio: '10:00', fin: '12:30' },
-      { label: '12:30 – 15:00', inicio: '12:30', fin: '15:00' },
-      { label: '15:00 – 17:00', inicio: '15:00', fin: '17:00' },
+      { label: '7:30 – 12:50',  inicio: '07:30', fin: '12:50' },
+      { label: '7:30 – 10:50',  inicio: '07:30', fin: '10:50' },
+      { label: '10:50 – 12:50', inicio: '10:50', fin: '12:50' },
+      { label: '12:50 – 14:35',  inicio: '12:50', fin: '14:35' },
+      { label: '14:35 – 17:05', inicio: '14:35', fin: '17:05' },
+      { label: '12:50– 17:05', inicio: '12:50', fin: '17:05' },
     ],
 
     selectedZona()  { return this.zonas.find(z => z.id === this.f.zona_id); },
@@ -626,7 +626,7 @@ function asigPage() {
 
     openAdd() {
       this.editing = false;
-      const today = '2026-03-14';
+      const today = '2026-06-04';
       this.f = { id:'', fecha: today, voluntario_id:'', capitan_id:'', zona_id:'', sub_sector:'', bloque_maestro:'', horario_inicio:'', horario_fin:'', notas:'' };
       this.err = ''; this.showForm = true;
     },
@@ -685,8 +685,8 @@ function asigPage() {
       const intlPhone = digits.startsWith('0') ? '58' + digits.slice(1) : digits;
       this.msgPhone = intlPhone;
       this.msgText =
-`*Asamblea de Circuito*
-*"TIENEN QUE ADORARLO CON ESPIRITU Y CON VERDAD"*
+`*Asamblea Regional*
+*"FELICES PARA SIEMPRE"*
 
 _${fecha}_
 
@@ -698,9 +698,7 @@ Estimado Hermano: *${nombre}*
 
 *Presente:*
 
-A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregaci\u00f3n, le invitamos a servir en este departamento en la Asamblea de Circuito a realizarse en fecha *${fecha}*, en vista de que se espera una notable asistencia, rogamos su colaboraci\u00f3n al respecto.
-
-Para poder brindar una recepci\u00f3n de calidad a nuestros hermanos e invitados, que resulte en honra para nuestro Padre celestial *Jehov\u00e1*, le solicitamos por favor unirse al grupo de WhatsApp por medio del siguiente enlace: ( https://chat.whatsapp.com/DRJyFAku8v24k8J0QkO8jQ?mode=gi_t ) para recibir las instrucciones *CO-23-S* y el plano de *DISPOSICI\u00d3N DE ACOMODADORES*.
+A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregaci\u00f3n, le invitamos a servir en este departamento en la Asamblea Regional a realizarse en fecha *${fecha}*, en vista de que se espera una notable asistencia, rogamos su colaboraci\u00f3n al respecto.
 
 Su asignaci\u00f3n ser\u00e1 en la *${zonaId}: ${sub}*, *"${zonaDesc}"* de acuerdo al plano de referencia.
 
@@ -781,8 +779,8 @@ _Dpto. Acomodadores_
 </head>
 <body>
   <div class="center">
-    <h1>Asamblea de Circuito</h1>
-    <h2>"Tienen que adorarlo con espíritu y con verdad"</h2>
+    <h1>Asamblea Regional</h1>
+    <h2>"Felices para siempre"</h2>
   </div>
   <p class="center fecha italic">${fecha}</p>
   <p class="center dept">Departamento de Acomodadores</p>
@@ -792,9 +790,7 @@ _Dpto. Acomodadores_
 
   <p><strong>Presente:</strong></p>
 
-  <p>A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregación, le invitamos a servir en este departamento en la Asamblea de Circuito a realizarse en fecha <strong>${fecha}</strong>, en vista de que se espera una notable asistencia, rogamos su colaboración al respecto.</p>
-
-  <p>Para poder brindar una recepción de calidad a nuestros hermanos e invitados, que resulte en honra para nuestro Padre celestial <strong>Jehová</strong>, le solicitamos por favor considerar previamente las instrucciones <strong>CO-23-S</strong>, que adjuntamos a esta carta.</p>
+  <p>A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregación, le invitamos a servir en este departamento en la Asamblea Regional a realizarse en fecha <strong>${fecha}</strong>, en vista de que se espera una notable asistencia, rogamos su colaboración al respecto.</p>
 
   <div class="asignacion-box">
     <p><strong>Zona asignada:</strong> ${zonaId}: ${sub} &ndash; <em>&ldquo;${zonaDesc}&rdquo;</em></p>
