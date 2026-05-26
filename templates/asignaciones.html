@@ -667,6 +667,14 @@ function asigPage() {
       return map[label] || '1er';
     },
 
+    diaSemanaDesdeISO(iso) {
+      if (!iso) return '—';
+      const [y, m, d] = String(iso).split('-').map(Number);
+      if (!y || !m || !d) return '—';
+      const date = new Date(Date.UTC(y, m - 1, d));
+      return new Intl.DateTimeFormat('es-ES', { weekday: 'long', timeZone: 'UTC' }).format(date).toUpperCase();
+    },
+
     openMsg(a) {
       const nombre   = a.voluntario_nombre || '\u2014';
       const cong     = a.congregacion_nombre || '\u2014';
@@ -675,6 +683,7 @@ function asigPage() {
       const zonaDesc = a.zona_nombre_descriptivo || a.zona_nombre || '\u2014';
       const bloque   = a.bloque_maestro || a.bloque_horario || '\u2014';
       const turno    = this.turnoFromBloque(bloque);
+      const diaSemana = this.diaSemanaDesdeISO(a.fecha);
       const fecha    = this.fechaLarga(a.fecha);
 
       // Resolve celular from _VOLS
@@ -694,7 +703,7 @@ _${fecha}_
 
 Estimado Hermano: *${nombre}*
 
-*Congr.:* _${cong}_
+*Congregación:* _${cong}_
 
 *Presente:*
 
@@ -702,7 +711,7 @@ A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de anci
 
 Su asignaci\u00f3n ser\u00e1 en la *${zonaId}: ${sub}*, *"${zonaDesc}"* de acuerdo al plano de referencia.
 
-El *D\u00cdA ASIGNADO* ser\u00e1: *SABADO*, en el *HORARIO INDICADO:* *${bloque}*, *${turno} TURNO*
+El *D\u00cdA ASIGNADO* ser\u00e1: *${diaSemana}*, en el *HORARIO INDICADO:* *${bloque}*.
 
 Por \u00faltimo, es fundamental su puntualidad por la afluencia de hermanos que habr\u00e1 el d\u00eda de Asamblea.
 
@@ -712,7 +721,7 @@ Nos despedimos de usted, agradeciendo de antemano su colaboraci\u00f3n y pidiend
 
 _Dpto. Acomodadores_
 
-*P.D.* POR FAVOR SE HA PROGRAMADO UNA REUNI\u00d3N PREVIA A LA ASAMBLEA PARA CONSIDERAR PUNTOS IMPORTANTES Y NECESARIOS DE NUESTRA LABOR COMO ACOMODADORES Y EN CASO DE UNA POSIBLE EVACUACION, LA REUNION SER\u00c1 EL D\u00cdA *JUEVES 12 DE MARZO* A HORAS *20:00* POR ZOOM SEG\u00daN EL SIGUIENTE ENLACE: https://zoom.us/j/3618783534 , *LA CONTRASE\u00d1A: 791937*`;
+*P.D.* POR FAVOR SE HA PROGRAMADO UNA REUNI\u00d3N PREVIA A LA ASAMBLEA PARA CONSIDERAR PUNTOS IMPORTANTES Y NECESARIOS DE NUESTRA LABOR COMO ACOMODADORES Y EN CASO DE UNA POSIBLE EVACUACION, LA REUNION SER\u00c1 EL D\u00cdA *LUNES 1 DE JUNIO* A HORAS *19:00* POR ZOOM SEG\u00daN EL SIGUIENTE ENLACE: https://jworg.zoom.us/j/81034243834 , *LA CONTRASE\u00d1A: Acomod*`;
       this.msgCopied = false;
       this.showMsg = true;
     },
@@ -741,6 +750,7 @@ _Dpto. Acomodadores_
       const zonaDesc= a.zona_nombre_descriptivo || a.zona_nombre || '—';
       const bloque  = a.bloque_maestro      || a.bloque_horario || '—';
       const turno   = this.turnoFromBloque(bloque);
+      const diaSemana = this.diaSemanaDesdeISO(a.fecha);
       const fecha   = this.fechaLarga(a.fecha);
 
       const html = `<!DOCTYPE html>
@@ -786,7 +796,7 @@ _Dpto. Acomodadores_
   <p class="center dept">Departamento de Acomodadores</p>
 
   <p class="greeting">Estimado Hermano: <strong>${nombre}</strong></p>
-  <p class="cong"><strong>Congr.:</strong> <em>${cong}</em></p>
+  <p class="cong"><strong>Congregación:</strong> <em>${cong}</em></p>
 
   <p><strong>Presente:</strong></p>
 
@@ -794,7 +804,7 @@ _Dpto. Acomodadores_
 
   <div class="asignacion-box">
     <p><strong>Zona asignada:</strong> ${zonaId}: ${sub} &ndash; <em>&ldquo;${zonaDesc}&rdquo;</em></p>
-    <p><strong>Día asignado:</strong> Sábado &nbsp;|&nbsp; <strong>Horario:</strong> ${bloque} &nbsp;|&nbsp; <strong>${turno} Turno</strong></p>
+    <p><strong>Día asignado:</strong> ${diaSemana} &nbsp;|&nbsp; <strong>Horario:</strong> ${bloque} &nbsp;</p>
     <p><strong>Fecha:</strong> ${fecha}</p>
   </div>
 
@@ -809,7 +819,7 @@ _Dpto. Acomodadores_
   </div>
 
   <div class="pd">
-    <p><strong>P.D.</strong> <em>Por favor se ha programado una reunión previa a la Asamblea para considerar puntos importantes y necesarios de nuestra labor como Acomodadores y en caso de una posible evacuación. La reunión será el día Martes 10 de Marzo a horas 20:00 por Zoom según el siguiente enlace:</em> https://zoom.us/j/3618783534 &nbsp; <strong>Contraseña: 791937</strong></p>
+    <p><strong>P.D.</strong> <em>Por favor se ha programado una reunión previa a la Asamblea para considerar puntos importantes y necesarios de nuestra labor como Acomodadores y en caso de una posible evacuación. La reunión será el día Lunes 1 de Junio a horas 19:00 por Zoom mediante el siguiente enlace:</em> https://jworg.zoom.us/j/81034243834 &nbsp; <strong>Contraseña: Acomod</strong></p>
   </div>
 </body>
 </html>`;
