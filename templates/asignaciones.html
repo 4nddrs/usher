@@ -520,8 +520,9 @@ function asigPage() {
       { label: '7:30 – 10:50',  inicio: '07:30', fin: '10:50' },
       { label: '10:50 – 12:50', inicio: '10:50', fin: '12:50' },
       { label: '12:50 – 14:35',  inicio: '12:50', fin: '14:35' },
+      { label: '13:00 – 19:00',  inicio: '13:00', fin: '19:00' },
       { label: '14:35 – 17:05', inicio: '14:35', fin: '17:05' },
-      { label: '12:50– 17:05', inicio: '12:50', fin: '17:05' },
+      { label: '12:50 – 17:05', inicio: '12:50', fin: '17:05' },
     ],
 
     selectedZona()  { return this.zonas.find(z => z.id === this.f.zona_id); },
@@ -686,6 +687,12 @@ function asigPage() {
       const diaSemana = this.diaSemanaDesdeISO(a.fecha);
       const fecha    = this.fechaLarga(a.fecha);
       const notas    = String(a.notas || '').trim();
+      const omitirBloqueDomingo = String(a.zona_id || a.zona_id_zona || '') === 'Z-V';
+      const bloqueDomingoMsg = omitirBloqueDomingo ? '' : [
+        `*Fecha:* _7 de junio de 2026_`,
+        `*Día asignado:* *DOMINGO*  |  *Horario:* *7:30 - 12:55*`,
+        `Zona asignada: *${zonaId}: ${sub}* — _"${zonaDesc}"_`,
+      ].join('\n') + '\n';
 
       // Resolve celular from _VOLS
       const vol = this.vols.find(v => v.id === a.voluntario_id);
@@ -711,15 +718,13 @@ Estimado Hermano: *${nombre}*
 A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregaci\u00f3n, le invitamos a servir en este departamento en la Asamblea Regional a realizarse en los dias: *5, 6 y 7 de junio de 2026*, en vista de que se espera una notable asistencia, rogamos su colaboraci\u00f3n al respecto.
 
 
-*DÍAS Y HORARIOS ASIGNADOS:*
+*DÍA(S) Y HORARIO(S) ASIGNADO(S):*
 
 *Fecha:* _${fecha}_
 *Día asignado:* *${diaSemana}*  |  *Horario:* *${bloque}*
 Zona asignada: *${zonaId}: ${sub}* — _"${zonaDesc}"_
 
-*Fecha:* _7 de junio de 2026_
-*Día asignado:* *DOMINGO*  |  *Horario:* *7:30 - 12:55*
-Zona asignada: *${zonaId}: ${sub}* — _"${zonaDesc}"_
+${bloqueDomingoMsg}
 
 ${notas ? `*Observaciones:*\n${notas}\n` : ''}
 
@@ -763,6 +768,12 @@ _Dpto. Acomodadores_
       const diaSemana = this.diaSemanaDesdeISO(a.fecha);
       const fecha   = this.fechaLarga(a.fecha);
       const notasRaw = String(a.notas || '').trim();
+      const omitirBloqueDomingo = String(a.zona_id || a.zona_id_zona || '') === 'Z-V';
+      const bloqueDomingoHtml = omitirBloqueDomingo ? '' : `<div class="asignacion-box">
+    <p><strong>Zona asignada:</strong> ${zonaId}: ${sub} &ndash; <em>&ldquo;${zonaDesc}&rdquo;</em></p>
+    <p><strong>Día asignado:</strong> DOMINGO &nbsp;|&nbsp; <strong>Horario:</strong> 7:30 - 12:55 &nbsp;</p>
+    <p><strong>Fecha:</strong> ${fecha}</p>
+  </div>`;
       const notasHtml = notasRaw
         ? notasRaw
             .replace(/&/g, '&amp;')
@@ -828,11 +839,7 @@ _Dpto. Acomodadores_
     <p><strong>Fecha:</strong> ${fecha}</p>
   </div>
 
-  <div class="asignacion-box">
-    <p><strong>Zona asignada:</strong> ${zonaId}: ${sub} &ndash; <em>&ldquo;${zonaDesc}&rdquo;</em></p>
-    <p><strong>Día asignado:</strong> DOMINGO &nbsp;|&nbsp; <strong>Horario:</strong> 7:30 - 12:55 &nbsp;</p>
-    <p><strong>Fecha:</strong> ${fecha}</p>
-  </div>
+  ${bloqueDomingoHtml}
 
   ${notasHtml ? `<div class="asignacion-box">
     <p><strong>Observaciones:</strong></p>
