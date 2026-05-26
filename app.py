@@ -416,6 +416,7 @@ def api_add_asignacion():
         "zona_id":        body.get("zona_id",        ""),
         "sub_sector":     body.get("sub_sector",     ""),
         "bloque_maestro": body.get("bloque_maestro", ""),
+        "notas":          (body.get("notas") or "").strip(),
         "horario": {
             "inicio": body.get("horario_inicio", ""),
             "fin":    body.get("horario_fin",    ""),
@@ -437,6 +438,7 @@ def api_update_asignacion(doc_id):
         "zona_id":        body.get("zona_id",        ""),
         "sub_sector":     body.get("sub_sector",     ""),
         "bloque_maestro": body.get("bloque_maestro", ""),
+        "notas":          (body.get("notas") or "").strip(),
         "horario": {
             "inicio": body.get("horario_inicio", ""),
             "fin":    body.get("horario_fin",    ""),

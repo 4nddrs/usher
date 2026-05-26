@@ -685,6 +685,7 @@ function asigPage() {
       const turno    = this.turnoFromBloque(bloque);
       const diaSemana = this.diaSemanaDesdeISO(a.fecha);
       const fecha    = this.fechaLarga(a.fecha);
+      const notas    = String(a.notas || '').trim();
 
       // Resolve celular from _VOLS
       const vol = this.vols.find(v => v.id === a.voluntario_id);
@@ -697,7 +698,7 @@ function asigPage() {
 `*Asamblea Regional*
 *"FELICES PARA SIEMPRE"*
 
-_${fecha}_
+_5, 6 y 7 de junio de 2026_
 
 *Departamento de Acomodadores*
 
@@ -707,11 +708,20 @@ Estimado Hermano: *${nombre}*
 
 *Presente:*
 
-A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregaci\u00f3n, le invitamos a servir en este departamento en la Asamblea Regional a realizarse en fecha *${fecha}*, en vista de que se espera una notable asistencia, rogamos su colaboraci\u00f3n al respecto.
+A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregaci\u00f3n, le invitamos a servir en este departamento en la Asamblea Regional a realizarse en los dias: *5, 6 y 7 de junio de 2026*, en vista de que se espera una notable asistencia, rogamos su colaboraci\u00f3n al respecto.
 
-Su asignaci\u00f3n ser\u00e1 en la *${zonaId}: ${sub}*, *"${zonaDesc}"* de acuerdo al plano de referencia.
 
-El *D\u00cdA ASIGNADO* ser\u00e1: *${diaSemana}*, en el *HORARIO INDICADO:* *${bloque}*.
+*DÍAS Y HORARIOS ASIGNADOS:*
+
+*Fecha:* _${fecha}_
+*Día asignado:* *${diaSemana}*  |  *Horario:* *${bloque}*
+Zona asignada: *${zonaId}: ${sub}* — _"${zonaDesc}"_
+
+*Fecha:* _7 de junio de 2026_
+*Día asignado:* *DOMINGO*  |  *Horario:* *7:30 - 12:55*
+Zona asignada: *${zonaId}: ${sub}* — _"${zonaDesc}"_
+
+${notas ? `*Observaciones:*\n${notas}\n` : ''}
 
 Por \u00faltimo, es fundamental su puntualidad por la afluencia de hermanos que habr\u00e1 el d\u00eda de Asamblea.
 
@@ -752,6 +762,16 @@ _Dpto. Acomodadores_
       const turno   = this.turnoFromBloque(bloque);
       const diaSemana = this.diaSemanaDesdeISO(a.fecha);
       const fecha   = this.fechaLarga(a.fecha);
+      const notasRaw = String(a.notas || '').trim();
+      const notasHtml = notasRaw
+        ? notasRaw
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/\n/g, '<br>')
+        : '';
 
       const html = `<!DOCTYPE html>
 <html lang="es">
@@ -792,7 +812,7 @@ _Dpto. Acomodadores_
     <h1>Asamblea Regional</h1>
     <h2>"Felices para siempre"</h2>
   </div>
-  <p class="center fecha italic">${fecha}</p>
+  <p class="center fecha italic">5, 6 y 7 de junio de 2026</p>
   <p class="center dept">Departamento de Acomodadores</p>
 
   <p class="greeting">Estimado Hermano: <strong>${nombre}</strong></p>
@@ -800,7 +820,7 @@ _Dpto. Acomodadores_
 
   <p><strong>Presente:</strong></p>
 
-  <p>A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregación, le invitamos a servir en este departamento en la Asamblea Regional a realizarse en fecha <strong>${fecha}</strong>, en vista de que se espera una notable asistencia, rogamos su colaboración al respecto.</p>
+  <p>A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregación, le invitamos a servir en este departamento en la Asamblea Regional a realizarse en los siguientes dias: <strong>5, 6 y 7 de junio de 2026</strong>, en vista de que se espera una notable asistencia, rogamos su colaboración al respecto.</p>
 
   <div class="asignacion-box">
     <p><strong>Zona asignada:</strong> ${zonaId}: ${sub} &ndash; <em>&ldquo;${zonaDesc}&rdquo;</em></p>
@@ -808,7 +828,19 @@ _Dpto. Acomodadores_
     <p><strong>Fecha:</strong> ${fecha}</p>
   </div>
 
+  <div class="asignacion-box">
+    <p><strong>Zona asignada:</strong> ${zonaId}: ${sub} &ndash; <em>&ldquo;${zonaDesc}&rdquo;</em></p>
+    <p><strong>Día asignado:</strong> DOMINGO &nbsp;|&nbsp; <strong>Horario:</strong> 7:30 - 12:55 &nbsp;</p>
+    <p><strong>Fecha:</strong> ${fecha}</p>
+  </div>
+
+  ${notasHtml ? `<div class="asignacion-box">
+    <p><strong>Observaciones:</strong></p>
+    <p>${notasHtml}</p>
+  </div>` : ''}
+
   <p>Por último, es fundamental su puntualidad por la afluencia de hermanos que habrá el día de Asamblea.</p>
+
 
   <p>Nos despedimos de usted, agradeciendo de antemano su colaboración y pidiendo a nuestro Dios <strong>Jehová</strong> que siga bendiciendo ricamente su arduo trabajo a favor de los intereses del Reino.</p>
 
