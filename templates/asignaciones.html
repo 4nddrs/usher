@@ -627,7 +627,12 @@ function asigPage() {
 
     openAdd() {
       this.editing = false;
-      const today = '2026-06-04';
+      const d = new Date();
+      const today = [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, '0'),
+        String(d.getDate()).padStart(2, '0'),
+      ].join('-');
       this.f = { id:'', fecha: today, voluntario_id:'', capitan_id:'', zona_id:'', sub_sector:'', bloque_maestro:'', horario_inicio:'', horario_fin:'', notas:'' };
       this.err = ''; this.showForm = true;
     },
@@ -689,7 +694,7 @@ function asigPage() {
       const notas    = String(a.notas || '').trim();
       const omitirBloqueDomingo = String(a.zona_id || a.zona_id_zona || '') === 'Z-V';
       const bloqueDomingoMsg = omitirBloqueDomingo ? '' : [
-        `*Fecha:* _7 de junio de 2026_`,
+        `*Fecha:* _16 de Agosto de 2026_`,
         `*Día asignado:* *DOMINGO*  |  *Horario:* *7:30 - 12:55*`,
         `Zona asignada: *${zonaId}: ${sub}* — _"${zonaDesc}"_`,
       ].join('\n') + '\n';
@@ -705,8 +710,8 @@ function asigPage() {
 `*Asamblea Regional*
 *"FELICES PARA SIEMPRE"*
 
-_5, 6 y 7 de junio de 2026_
-
+_14, 15 y 16 de Agosto de 2026_
+ 
 *Departamento de Acomodadores*
 
 Estimado Hermano: *${nombre}*
@@ -715,7 +720,7 @@ Estimado Hermano: *${nombre}*
 
 *Presente:*
 
-A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregaci\u00f3n, le invitamos a servir en este departamento en la Asamblea Regional a realizarse en los dias: *5, 6 y 7 de junio de 2026*, en vista de que se espera una notable asistencia, rogamos su colaboraci\u00f3n al respecto.
+A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregaci\u00f3n, le invitamos a servir en este departamento en la Asamblea Regional a realizarse en los dias: *14, 15 y 16 de Agosto de 2026*, en vista de que se espera una notable asistencia, rogamos su colaboraci\u00f3n al respecto.
 
 
 *DÍA(S) Y HORARIO(S) ASIGNADO(S):*
@@ -736,7 +741,7 @@ Nos despedimos de usted, agradeciendo de antemano su colaboraci\u00f3n y pidiend
 
 _Dpto. Acomodadores_
 
-*P.D.* POR FAVOR SE HA PROGRAMADO UNA REUNI\u00d3N PREVIA A LA ASAMBLEA PARA CONSIDERAR PUNTOS IMPORTANTES Y NECESARIOS DE NUESTRA LABOR COMO ACOMODADORES Y EN CASO DE UNA POSIBLE EVACUACION, LA REUNION SER\u00c1 EL D\u00cdA *LUNES 1 DE JUNIO* A HORAS *19:30* POR ZOOM SEG\u00daN EL SIGUIENTE ENLACE: https://jworg.zoom.us/j/81034243834 , *LA CONTRASE\u00d1A: Acomod*`;
+*P.D.* POR FAVOR SE HA PROGRAMADO UNA REUNI\u00d3N PREVIA A LA ASAMBLEA PARA CONSIDERAR PUNTOS IMPORTANTES Y NECESARIOS DE NUESTRA LABOR COMO ACOMODADORES Y EN CASO DE UNA POSIBLE EVACUACION, LA REUNION SER\u00c1 EL D\u00cdA *LUNES 10 DE AGOSTO* A HORAS *19:30* POR ZOOM SEG\u00daN EL SIGUIENTE ENLACE: https://jworg.zoom.us/j/81009240737 , *LA CONTRASE\u00d1A: asamblea*`;
       this.msgCopied = false;
       this.showMsg = true;
     },
@@ -823,7 +828,7 @@ _Dpto. Acomodadores_
     <h1>Asamblea Regional</h1>
     <h2>"Felices para siempre"</h2>
   </div>
-  <p class="center fecha italic">5, 6 y 7 de junio de 2026</p>
+  <p class="center fecha italic">14, 15 y 16 de Agosto de 2026</p>
   <p class="center dept">Departamento de Acomodadores</p>
 
   <p class="greeting">Estimado Hermano: <strong>${nombre}</strong></p>
@@ -831,7 +836,7 @@ _Dpto. Acomodadores_
 
   <p><strong>Presente:</strong></p>
 
-  <p>A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregación, le invitamos a servir en este departamento en la Asamblea Regional a realizarse en los siguientes dias: <strong>5, 6 y 7 de junio de 2026</strong>, en vista de que se espera una notable asistencia, rogamos su colaboración al respecto.</p>
+  <p>A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregación, le invitamos a servir en este departamento en la Asamblea Regional a realizarse en los siguientes dias: <strong>14, 15 y 16 de Agosto de 2026</strong>, en vista de que se espera una notable asistencia, rogamos su colaboración al respecto.</p>
 
   <div class="asignacion-box">
     <p><strong>Zona asignada:</strong> ${zonaId}: ${sub} &ndash; <em>&ldquo;${zonaDesc}&rdquo;</em></p>
@@ -858,7 +863,7 @@ _Dpto. Acomodadores_
   </div>
 
   <div class="pd">
-    <p><strong>P.D.</strong> <em>Por favor se ha programado una reunión previa a la Asamblea para considerar puntos importantes y necesarios de nuestra labor como Acomodadores y en caso de una posible evacuación. La reunión será el día Lunes 1 de Junio a horas 19:30 por Zoom mediante el siguiente enlace:</em> https://jworg.zoom.us/j/81034243834 &nbsp; <strong>Contraseña: Acomod</strong></p>
+    <p><strong>P.D.</strong> <em>Por favor se ha programado una reunión previa a la Asamblea para considerar puntos importantes y necesarios de nuestra labor como Acomodadores y en caso de una posible evacuación. La reunión será el día Lunes 10 de Agosto a horas 19:30 por Zoom mediante el siguiente enlace:</em> https://jworg.zoom.us/j/81009240737 &nbsp; <strong>Contraseña: asamblea</strong></p>
   </div>
 </body>
 </html>`;
