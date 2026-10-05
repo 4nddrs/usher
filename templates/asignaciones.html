@@ -653,7 +653,7 @@ function asigPage() {
     fechaLarga(iso) {
       if (!iso) return iso;
       const [y, m, d] = iso.split('-').map(Number);
-      const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
       return `${d} de ${meses[m-1]} de ${y}`;
     },
 
