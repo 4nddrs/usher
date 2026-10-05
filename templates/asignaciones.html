@@ -7,6 +7,7 @@
 const _VOLS  = {{ voluntarios  | tojson }};
 const _ZONAS = {{ zonas        | tojson }};
 const _CAPS  = {{ capitanes    | tojson }};
+const _BLOQUES = {{ bloques   | tojson }};
 </script>
 
 <div x-data="asigPage()">
@@ -515,15 +516,7 @@ function asigPage() {
     vols:   _VOLS,
     zonas:  _ZONAS,
     caps:   _CAPS,
-    bloques: [
-      { label: '7:30 – 12:50',  inicio: '07:30', fin: '12:50' },
-      { label: '7:30 – 10:50',  inicio: '07:30', fin: '10:50' },
-      { label: '10:50 – 12:50', inicio: '10:50', fin: '12:50' },
-      { label: '12:50 – 14:35',  inicio: '12:50', fin: '14:35' },
-      { label: '15:00 – 19:00',  inicio: '15:00', fin: '19:00' },
-      { label: '14:35 – 17:05', inicio: '14:35', fin: '17:05' },
-      { label: '12:50 – 17:05', inicio: '12:50', fin: '17:05' },
-    ],
+    bloques: _BLOQUES,
 
     selectedZona()  { return this.zonas.find(z => z.id === this.f.zona_id); },
     selectedFZona() { return this.zonas.find(z => z.id === this.fZona); },
@@ -692,12 +685,6 @@ function asigPage() {
       const diaSemana = this.diaSemanaDesdeISO(a.fecha);
       const fecha    = this.fechaLarga(a.fecha);
       const notas    = String(a.notas || '').trim();
-      const omitirBloqueDomingo = String(a.zona_id || a.zona_id_zona || '') === 'Z-V';
-      const bloqueDomingoMsg = omitirBloqueDomingo ? '' : [
-        `*Fecha:* _16 de Agosto de 2026_`,
-        `*Día asignado:* *DOMINGO*  |  *Horario:* *7:30 - 12:55*`,
-        `Zona asignada: *${zonaId}: ${sub}* — _"${zonaDesc}"_`,
-      ].join('\n') + '\n';
 
       // Resolve celular from _VOLS
       const vol = this.vols.find(v => v.id === a.voluntario_id);
@@ -707,10 +694,9 @@ function asigPage() {
       const intlPhone = digits.startsWith('0') ? '58' + digits.slice(1) : digits;
       this.msgPhone = intlPhone;
       this.msgText =
-`*Asamblea Regional*
-*"FELICES PARA SIEMPRE"*
+`*Asamblea de Circuito*
 
-_14, 15 y 16 de Agosto de 2026_
+_18 de Octubre de 2026_
  
 *Departamento de Acomodadores*
 
@@ -720,7 +706,7 @@ Estimado Hermano: *${nombre}*
 
 *Presente:*
 
-A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregaci\u00f3n, le invitamos a servir en este departamento en la Asamblea Regional a realizarse en los dias: *14, 15 y 16 de Agosto de 2026*, en vista de que se espera una notable asistencia, rogamos su colaboraci\u00f3n al respecto.
+A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregaci\u00f3n, le invitamos a servir en este departamento en la Asamblea de Circuito a realizarse el d\u00eda: *18 de Octubre de 2026*, en vista de que se espera una notable asistencia, rogamos su colaboraci\u00f3n al respecto.
 
 
 *DÍA(S) Y HORARIO(S) ASIGNADO(S):*
@@ -728,8 +714,6 @@ A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de anci
 *Fecha:* _${fecha}_
 *Día asignado:* *${diaSemana}*  |  *Horario:* *${bloque}*
 Zona asignada: *${zonaId}: ${sub}* — _"${zonaDesc}"_
-
-${bloqueDomingoMsg}
 
 ${notas ? `*Observaciones:*\n${notas}\n` : ''}
 
@@ -741,7 +725,7 @@ Nos despedimos de usted, agradeciendo de antemano su colaboraci\u00f3n y pidiend
 
 _Dpto. Acomodadores_
 
-*P.D.* POR FAVOR SE HA PROGRAMADO UNA REUNI\u00d3N PREVIA A LA ASAMBLEA PARA CONSIDERAR PUNTOS IMPORTANTES Y NECESARIOS DE NUESTRA LABOR COMO ACOMODADORES Y EN CASO DE UNA POSIBLE EVACUACION, LA REUNION SER\u00c1 EL D\u00cdA *LUNES 10 DE AGOSTO* A HORAS *19:30* POR ZOOM SEG\u00daN EL SIGUIENTE ENLACE: https://jworg.zoom.us/j/81009240737 , *LA CONTRASE\u00d1A: asamblea*`;
+*P.D.* POR FAVOR SE HA PROGRAMADO UNA REUNI\u00d3N PREVIA A LA ASAMBLEA PARA CONSIDERAR PUNTOS IMPORTANTES Y NECESARIOS DE NUESTRA LABOR COMO ACOMODADORES Y EN CASO DE UNA POSIBLE EVACUACION, LA REUNION SER\u00c1 EL D\u00cdA *MI\u00c9RCOLES 14 DE OCTUBRE* A HORAS *20:00* POR ZOOM SEG\u00daN EL SIGUIENTE ENLACE: https://us02web.zoom.us/j/83616441738`;
       this.msgCopied = false;
       this.showMsg = true;
     },
@@ -773,12 +757,6 @@ _Dpto. Acomodadores_
       const diaSemana = this.diaSemanaDesdeISO(a.fecha);
       const fecha   = this.fechaLarga(a.fecha);
       const notasRaw = String(a.notas || '').trim();
-      const omitirBloqueDomingo = String(a.zona_id || a.zona_id_zona || '') === 'Z-V';
-      const bloqueDomingoHtml = omitirBloqueDomingo ? '' : `<div class="asignacion-box">
-    <p><strong>Zona asignada:</strong> ${zonaId}: ${sub} &ndash; <em>&ldquo;${zonaDesc}&rdquo;</em></p>
-    <p><strong>Día asignado:</strong> DOMINGO &nbsp;|&nbsp; <strong>Horario:</strong> 7:30 - 12:55 &nbsp;</p>
-    <p><strong>Fecha:</strong> ${fecha}</p>
-  </div>`;
       const notasHtml = notasRaw
         ? notasRaw
             .replace(/&/g, '&amp;')
@@ -825,10 +803,9 @@ _Dpto. Acomodadores_
 </head>
 <body>
   <div class="center">
-    <h1>Asamblea Regional</h1>
-    <h2>"Felices para siempre"</h2>
+    <h1>Asamblea de Circuito</h1>
   </div>
-  <p class="center fecha italic">14, 15 y 16 de Agosto de 2026</p>
+  <p class="center fecha italic">18 de Octubre de 2026</p>
   <p class="center dept">Departamento de Acomodadores</p>
 
   <p class="greeting">Estimado Hermano: <strong>${nombre}</strong></p>
@@ -836,15 +813,13 @@ _Dpto. Acomodadores_
 
   <p><strong>Presente:</strong></p>
 
-  <p>A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregación, le invitamos a servir en este departamento en la Asamblea Regional a realizarse en los siguientes dias: <strong>14, 15 y 16 de Agosto de 2026</strong>, en vista de que se espera una notable asistencia, rogamos su colaboración al respecto.</p>
+  <p>A solicitud del Departamento de Acomodadores y previa consulta al cuerpo de ancianos de su congregación, le invitamos a servir en este departamento en la Asamblea de Circuito a realizarse en el siguiente día: <strong>18 de Octubre de 2026</strong>, en vista de que se espera una notable asistencia, rogamos su colaboración al respecto.</p>
 
   <div class="asignacion-box">
     <p><strong>Zona asignada:</strong> ${zonaId}: ${sub} &ndash; <em>&ldquo;${zonaDesc}&rdquo;</em></p>
     <p><strong>Día asignado:</strong> ${diaSemana} &nbsp;|&nbsp; <strong>Horario:</strong> ${bloque} &nbsp;</p>
     <p><strong>Fecha:</strong> ${fecha}</p>
   </div>
-
-  ${bloqueDomingoHtml}
 
   ${notasHtml ? `<div class="asignacion-box">
     <p><strong>Observaciones:</strong></p>
@@ -863,7 +838,7 @@ _Dpto. Acomodadores_
   </div>
 
   <div class="pd">
-    <p><strong>P.D.</strong> <em>Por favor se ha programado una reunión previa a la Asamblea para considerar puntos importantes y necesarios de nuestra labor como Acomodadores y en caso de una posible evacuación. La reunión será el día Lunes 10 de Agosto a horas 19:30 por Zoom mediante el siguiente enlace:</em> https://jworg.zoom.us/j/81009240737 &nbsp; <strong>Contraseña: asamblea</strong></p>
+    <p><strong>P.D.</strong> <em>Por favor se ha programado una reunión previa a la Asamblea para considerar puntos importantes y necesarios de nuestra labor como Acomodadores y en caso de una posible evacuación. La reunión será el día Miércoles 14 de Octubre a horas 20:00 por Zoom mediante el siguiente enlace:</em> https://us02web.zoom.us/j/83616441738 &nbsp; </p>
   </div>
 </body>
 </html>`;

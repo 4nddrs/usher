@@ -108,13 +108,13 @@ def inject_now():
 
 # ── Bloques predefinidos ──────────────────────────────────────────────────────
 BLOQUES = [
-    {"label": "Jornada Completa  (7:30 – 12:30)", "inicio": "07:30", "fin": "12:30"},
-    {"label": "Bloque Mañana     (7:30 – 10:00)", "inicio": "07:30", "fin": "10:00"},
-    {"label": "Bloque Tarde      (10:00 – 12:30)", "inicio": "10:00", "fin": "12:30"},
-    {"label": "Turno A  (7:30 – 8:45)",  "inicio": "07:30", "fin": "08:45"},
-    {"label": "Turno B  (8:45 – 10:00)", "inicio": "08:45", "fin": "10:00"},
-    {"label": "Turno C  (10:00 – 11:15)","inicio": "10:00", "fin": "11:15"},
-    {"label": "Turno D  (11:15 – 12:30)","inicio": "11:15", "fin": "12:30"},
+    {"label": "7:30 – 12:30",  "inicio": "07:30", "fin": "12:30"},
+    {"label": "7:30 – 10:50",  "inicio": "07:30", "fin": "10:50"},
+    {"label": "10:50 – 12:50", "inicio": "10:50", "fin": "12:50"},
+    {"label": "12:50 – 14:35", "inicio": "12:50", "fin": "14:35"},
+    {"label": "15:00 – 19:00", "inicio": "15:00", "fin": "19:00"},
+    {"label": "14:35 – 17:05", "inicio": "14:35", "fin": "17:05"},
+    {"label": "12:30 – 16:45", "inicio": "12:30", "fin": "16:45"},
 ]
 
 
