@@ -57,3 +57,6 @@ gunicorn.pid
 
 # Folders
 scripts/
+
+# ── Tooling local (gentle-ai skill registry / caches) ─────────────────────────
+.atl/
